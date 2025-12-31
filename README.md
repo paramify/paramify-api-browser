@@ -4,7 +4,9 @@ A simple python application that queries the Paramify API and returns the result
 
 ## Walkthrough Video
 
-[![Paramify API Browser Walkthrough](images/Paramify%20API%20Browser%20Walkthrough%20GIF.gif)](https://www.loom.com/share/127b575fb74545efa5788a982526b6b6)
+<a href="https://www.loom.com/share/127b575fb74545efa5788a982526b6b6">
+  <img src="images/Paramify%20API%20Browser%20Walkthrough%20GIF.gif" alt="Paramify API Browser Walkthrough" width="800" style="max-width: 80%;">
+</a>
 
 **Watch the full walkthrough video:** [Loom Video](https://www.loom.com/share/127b575fb74545efa5788a982526b6b6) | [Download Video (MP4)](images/Paramify%20API%20Browser%20Walkthrough%20Video.mp4)
 
