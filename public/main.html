@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramify API Browser</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="jquery.json-viewer.css">
+  <script src="jquery.min.js"></script>
+  <script src="jquery.json-viewer.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Paramify API Browser</h1>
+  </header>
+
+  <div id="login-section" style="display: block">
+    <h2>Login</h2>
+    <form id="login-form">
+      <label for="apiEnvironment">Environment:</label>
+      <select id="apiEnvironment" name="apiEnvironment" style="width: 100%; padding: 12px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+        <option value="https://app.paramify.com/api/v0" selected>Production (app.paramify.com)</option>
+        <option value="https://demo.paramify.com/api/v0">Demo (demo.paramify.com)</option>
+        <option value="https://stage.paramify.com/api/v0">Stage (stage.paramify.com)</option>
+      </select>
+      <label for="apiURL">API URL:</label>
+      <input type="text" id="apiURL" name="apiURL" placeholder="https://app.paramify.com/api/v0" required value="https://app.paramify.com/api/v0"><br><br>
+
+      <label for="apiToken">API Token:</label>
+      <input type="password" id="apiToken" name="apiToken" placeholder="Your API Token" required><br><br>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <div id="api-section" style="display: block;">
+    <div class="container">
+      <div class="api-list">
+        <h2>API Calls</h2>
+        
+        <h3 style="margin-top: 0; margin-bottom: 10px; color: #1467FF; border-bottom: 2px solid #1467FF; padding-bottom: 5px;">Workspace Endpoints</h3>
+        <button class="api-button" data-endpoint="/projects">Projects</button>
+        <button class="api-button" data-endpoint="/solution-capabilities">Solution Capabilities</button>
+        <button class="api-button" data-endpoint="/elements">Elements</button>
+        <button class="api-button" data-endpoint="/assessment">Assessments</button>
+        <button class="api-button" data-endpoint="/evidence">Evidence</button>
+        
+        <h3 style="margin-top: 20px; margin-bottom: 10px; color: #1467FF; border-bottom: 2px solid #1467FF; padding-bottom: 5px;">Project Endpoints</h3>
+        <div style="margin-bottom: 10px;">
+          <label for="projectId" style="display: block; margin-bottom: 5px; font-weight: bold;">Project:</label>
+          <select id="projectId" name="projectId" style="width: 100%; padding: 5px; margin-bottom: 10px; box-sizing: border-box;">
+            <option value="">Loading projects...</option>
+          </select>
+          <button type="button" id="refreshProjects" style="width: 100%; padding: 5px; margin-bottom: 10px; color: white; border: none; border-radius: 3px; cursor: pointer;">Refresh Projects</button>
+        </div>
+        <button class="api-button project-endpoint" data-endpoint-template="/projects/{projectId}" data-requires-project="true">Get Project by ID</button>
+        <button class="api-button project-endpoint" data-endpoint-template="/projects/{projectId}/control-implementations" data-requires-project="true">Control Implementations</button>
+        <button class="api-button project-endpoint" data-endpoint-template="/issues?projectId={projectId}" data-requires-project="true">Issues</button>
+        
+        <h3 style="margin-top: 20px; margin-bottom: 10px; color: #1467FF; border-bottom: 2px solid #1467FF; padding-bottom: 5px;">Issue Endpoints</h3>
+        <div style="margin-bottom: 10px;">
+          <label for="issueId" style="display: block; margin-bottom: 5px; font-weight: bold;">Issue ID:</label>
+          <input type="text" id="issueId" name="issueId" placeholder="Enter issue UUID" style="width: 100%; padding: 5px; margin-bottom: 10px; box-sizing: border-box;">
+        </div>
+        <button class="api-button issue-endpoint" data-endpoint-template="/issues/{issueId}/recommendations" data-requires-issue="true">Recommendations</button>
+        <button class="api-button issue-endpoint" data-endpoint-template="/issues/{issueId}/deviations" data-requires-issue="true">Deviations</button>
+        <button class="api-button issue-endpoint" data-endpoint-template="/issues/{issueId}/milestones" data-requires-issue="true">Milestones</button>
+<br/>
+        <form id="logout-form" action="/logout">
+            <button type="submit">Logout</button>
+          </form>
+      </div>
+      <div class="api-response">
+        <div id="apiName" value=""></div>
+        <pre id="response-output"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
