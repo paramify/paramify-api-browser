@@ -2,6 +2,19 @@
 
 A simple python application that queries the Paramify API and returns the results in an HTML web application. The goal is to provide a jump start to using the Paramify API and help you understand the available API endpoints and response JSON structure.
 
+## Walkthrough Video
+
+[![Paramify API Browser Walkthrough](images/Paramify%20API%20Browser%20Walkthrough%20GIF.gif)](https://www.loom.com/share/127b575fb74545efa5788a982526b6b6)
+
+**Watch the full walkthrough video:** [Loom Video](https://www.loom.com/share/127b575fb74545efa5788a982526b6b6) | [Download Video (MP4)](images/Paramify%20API%20Browser%20Walkthrough%20Video.mp4)
+
+The video covers how to create an API key in your Paramify workspace, install and run the tool locally using Python/Flask, and navigate the available endpoints for projects, controls, issues, and more.
+
+**Video Chapters:**
+- **0:00** - Introduction
+- **0:53** - Creating an API key in Paramify
+- **1:28** - Installing and running the tool locally
+- **2:53** - Accessing full Swagger API documentation
 
 ## Setup Instructions
 
