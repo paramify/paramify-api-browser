@@ -7,7 +7,12 @@ A simple python application that queries the Paramify REST API and returns the r
 
 0. This assumes you have Python installed on your local machine.
 
-1. Download all files in this directory. (git clone)
+1. Clone the repository:
+   
+   ```bash
+   git clone https://github.com/paramify/paramify-api-browser.git
+   cd paramify-api-browser
+   ```
 
 2. Install the required libraries:
    
@@ -29,9 +34,7 @@ A simple python application that queries the Paramify REST API and returns the r
    - Select your environment from the dropdown (Production, Demo, or Stage)
    - Enter your Bearer token
 
-6. After login, projects will automatically load in the dropdown menu
-
-7. Click the buttons to call the APIs.
+6. Click the buttons to call the APIs.
 
 ## API Authentication
 
@@ -43,34 +46,22 @@ The base API URL will automatically be set based on your environment selection. 
 
 To create a Paramify API Key, see the [Create a Paramify API Key](https://support.paramify.com/hc/en-us/articles/43292803890451-Create-a-Paramify-API-Key) guide.
 
-## Available Endpoints
 
-The browser includes buttons for common Paramify API endpoints:
+## Images
 
-### Workspace Endpoints
-- **Projects**: Get all projects accessible to your API key
-- **Solution Capabilities**: Get all solution capabilities
-- **Elements**: Get all elements
-- **Assessments**: Get all assessments
-- **Evidence**: Get all evidence
+### Login Screen
 
-### Project Endpoints
-After logging in, projects will automatically load in a dropdown menu. Select a project to use these endpoints:
-- **Get Project by ID**: Get details for a specific project
-- **Control Implementations**: Get all control implementations for a project
-- **Issues**: Get all issues for a project
+![Login Screen](images/login-screen.png)
 
-### Issue Endpoints
-For issue-specific endpoints, you'll need to enter an Issue ID (UUID) in the input field:
-- **Recommendations**: Get recommendations for an issue
-- **Deviations**: Get deviations for an issue
-- **Milestones**: Get milestones for an issue
+### API Calls
 
-**Tip**: After fetching issues for a project, you can copy an Issue ID from the response to use with issue endpoints.
+![API Calls](images/api-calls.png) 
+
 
 ## API Documentation
 
 The full Paramify REST API documentation is available at: https://app.paramify.com/api/documentation/#/
+
 
 ## Acknowledgments
 
