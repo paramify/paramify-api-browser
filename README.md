@@ -1,8 +1,6 @@
 # Paramify API Browser
 
-[![Dependabot](https://img.shields.io/badge/dependabot-enabled-025e8c?logo=dependabot)](https://github.com/dependabot)
-
-A simple python application that queries the Paramify REST API and returns the results in an HTML web application. The goal is to provide a jump start to using the Paramify API and help you understand the available API endpoints, response JSON structure and enable the creation of lightweight console or data access tools.
+A simple python application that queries the Paramify API and returns the results in an HTML web application. The goal is to provide a jump start to using the Paramify API and help you understand the available API endpoints and response JSON structure.
 
 
 ## Setup Instructions
@@ -62,7 +60,7 @@ To create a Paramify API Key, see the [Create a Paramify API Key](https://suppor
 
 ## API Documentation
 
-The full Paramify REST API documentation is available at: https://app.paramify.com/api/documentation/#/
+The full Paramify API documentation is available at: https://app.paramify.com/api/documentation/#/
 
 
 ## Acknowledgments
