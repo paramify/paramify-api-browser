@@ -39,11 +39,17 @@ def login():
     api_token = request.json.get('apiToken', '')
 
     try:
+        # Per OpenAPI spec, Paramify supports HTTP bearer auth and a deprecated apiKey scheme
+        # that uses a header literally named "Bearer". Some environments/keys may still require it.
+        auth_headers = {
+            'Authorization': f'Bearer {api_token}',
+            'Bearer': api_token,
+        }
         # Make a request to the API to validate the URL and token
         # Paramify API uses Bearer token authentication
         response = requests.get(
             f'{api_url}/projects',
-            headers={'Authorization': f'Bearer {api_token}'}
+            headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -74,26 +80,35 @@ def execute():
     api_token = session.get('apiToken', '')
 
     try:
+        auth_headers = {
+            'Authorization': f'Bearer {api_token}',
+            'Bearer': api_token,
+        }
         # Make a request to the API endpoint
         # Paramify API uses Bearer token authentication
         response = requests.get(
             f'{api_url}{endpoint}',
-            headers={'Authorization': f'Bearer {api_token}'}
+            headers=auth_headers
         )
         
-        # Handle non-JSON responses
-        if response.status_code == 200:
-            try:
-                return jsonify(response.json())
-            except ValueError:
-                return jsonify({'error': 'Response is not valid JSON', 'status_code': response.status_code}), 500
-        else:
-            # Return error response
-            try:
-                error_data = response.json()
-                return jsonify(error_data), response.status_code
-            except ValueError:
-                return jsonify({'error': f'Request failed with status {response.status_code}'}), response.status_code
+        # Return JSON when possible, otherwise wrap raw response in JSON so the UI can render it.
+        content_type = response.headers.get('Content-Type', '')
+        try:
+            data = response.json()
+            return jsonify(data), response.status_code
+        except ValueError:
+            return (
+                jsonify(
+                    {
+                        "nonJsonResponse": True,
+                        "status_code": response.status_code,
+                        "content_type": content_type,
+                        "endpoint": endpoint,
+                        "raw": response.text,
+                    }
+                ),
+                response.status_code,
+            )
 
     except requests.RequestException as error:
         print(f"Error executing API call: {error}")

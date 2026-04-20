@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Paramify REST API Documentation",
-    "version": "0.2.0",
+    "version": "0.5.1",
     "description": "This is the REST API documentation for the Paramify application."
   },
   "servers": [
@@ -86,9 +86,9 @@
           {
             "in": "path",
             "name": "projectId",
+            "description": "An id that represents a project within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/projectId"
             },
             "required": true
           }
@@ -135,15 +135,16 @@
         "tags": [
           "Project Control Implementations"
         ],
+        "operationId": "getProjectControlImplementations",
         "summary": "Get all control implementations for a project",
-        "description": "Get all control implementations for a project",
+        "description": "Retrieves all control implementations associated with the specified project.",
         "parameters": [
           {
             "in": "path",
             "name": "projectId",
+            "description": "An id that represents a project within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/projectId"
             },
             "required": true
           }
@@ -151,11 +152,6 @@
         "responses": {
           "200": {
             "description": "200 Ok",
-            "links": {
-              "getProjectControlImplementations": {
-                "$ref": "#/components/links/getProjectControlImplementations"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -232,7 +228,7 @@
         ],
         "operationId": "getIssues",
         "summary": "Get issues within a project filterable by query parameters.",
-        "description": "Gets all issues within the project specified by the query parameter `projectId`, and optionally filtered by various parameters.\n\n**Basic Filtering:**\n- **Multiple IDs**: Pass several `id` values to retrieve multiple issues at once\n- **POAM IDs**: Pass several `poamId` values to retrieve multiple issues (requires `projectId`)\n\n**Content Filtering:**\n- **`deviationType`**: Retrieve issues containing deviations of the specified type\n- **`title`**: Retrieve issues whose title contains the provided string (case-insensitive)\n- **`kev`**: Retrieve issues containing CVE IDs present in the Known Exploited Vulnerabilities (KEV) catalog\n- **`cveId`**: Retrieve issues containing the specified CVE identifier (OR logic for multiple CVE IDs)\n- **`asset`**: Retrieve issues with at least one of the provided asset names (case-sensitive, exact match)\n\n**Date Range Filtering:**\n\nDate ranges are inclusive. You may provide one side of the date range to get an unbounded range. Date format for all filters: YYYY-MM-DD (e.g., \"2024-01-01\")\n- **Effective Date**: Use `effectiveDateStart` and `effectiveDateEnd` (filters the `createdAt` field returned by the API)\n- **Due Date**: Use `dueDateStart` and `dueDateEnd`\n- **Status Date**: Use `statusDateStart` and `statusDateEnd`",
+        "description": "Gets all issues within the project specified by the query parameter `projectId`, and optionally filtered by various parameters.\n\n**Basic Filtering:**\n- **Multiple IDs**: Pass several `id` values to retrieve multiple issues at once\n- **POAM IDs**: Pass several `poamId` values to retrieve multiple issues (requires `projectId`)\n\n**Content Filtering:**\n- **`deviationType`**: Retrieve issues containing deviations of the specified type\n- **`title`**: Retrieve issues whose title contains the provided string (case-insensitive)\n- **`kev`**: Retrieve issues containing CVE IDs present in the Known Exploited Vulnerabilities (KEV) catalog\n- **`cveId`**: Retrieve issues containing the specified CVE identifier (OR logic for multiple CVE IDs)\n- **`asset`**: Retrieve issues with at least one of the provided asset names (case-sensitive, exact match)\n- **`internetReachableVulnerability`**: Filter issues by whether they represent an internet-reachable vulnerability (boolean)\n- **`likelyExploitableVulnerability`**: Filter issues by whether they represent a likely-exploitable vulnerability (boolean)\n\n**Date Range Filtering:**\n\nDate ranges are inclusive. You may provide one side of the date range to get an unbounded range. Date format for all filters: YYYY-MM-DD (e.g., \"2024-01-01\")\n- **Effective Date**: Use `effectiveDateStart` and `effectiveDateEnd` (filters the `createdAt` field returned by the API)\n- **Due Date**: Use `dueDateStart` and `dueDateEnd`\n- **Status Date**: Use `statusDateStart` and `statusDateEnd`\n- **Evaluation Date**: Use `evaluationDateStart` and `evaluationDateEnd`",
         "parameters": [
           {
             "in": "query",
@@ -255,7 +251,10 @@
             "name": "projectId",
             "description": "An id that represents a project within the Paramify application.",
             "schema": {
-              "$ref": "#/components/schemas/projectId"
+              "type": "string",
+              "format": "uuid",
+              "description": "An id that represents a project within the Paramify application.",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
             }
           },
           {
@@ -352,6 +351,46 @@
             "schema": {
               "$ref": "#/components/schemas/asset"
             }
+          },
+          {
+            "in": "query",
+            "name": "internetReachableVulnerability",
+            "description": "Filter issues by whether they represent an internet-reachable vulnerability",
+            "schema": {
+              "type": "boolean",
+              "description": "Filter issues by whether they represent an internet-reachable vulnerability"
+            }
+          },
+          {
+            "in": "query",
+            "name": "likelyExploitableVulnerability",
+            "description": "Filter issues by whether they represent a likely-exploitable vulnerability",
+            "schema": {
+              "type": "boolean",
+              "description": "Filter issues by whether they represent a likely-exploitable vulnerability"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evaluationDateStart",
+            "description": "The start date of the evaluation date range. The evaluation date should be greater than or equal to this date.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The start date of the evaluation date range. The evaluation date should be greater than or equal to this date.",
+              "example": "2024-01-01"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evaluationDateEnd",
+            "description": "The end date of the evaluation date range. The evaluation date should be less than or equal to this date.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The end date of the evaluation date range. The evaluation date should be less than or equal to this date.",
+              "example": "2024-01-15"
+            }
           }
         ],
         "responses": {
@@ -440,6 +479,7 @@
                   "originalLevel": {
                     "type": "string",
                     "enum": [
+                      "NOT_SET",
                       "CHILL",
                       "LOW",
                       "MODERATE",
@@ -689,9 +729,33 @@
                       "string",
                       "null"
                     ],
-                    "default": "2025-12-24T00:22:36.575Z",
+                    "default": "2026-04-17T21:50:12.654Z",
                     "description": "The date the issue was created. If not provided, the current date will be used.",
                     "example": "2005-05-19T00:00:00.000Z"
+                  },
+                  "internetReachableVulnerability": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "Whether the issue represents an internet-reachable vulnerability.",
+                    "example": false
+                  },
+                  "likelyExploitableVulnerability": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "Whether the issue represents a likely-exploitable vulnerability.",
+                    "example": false
+                  },
+                  "evaluationDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The evaluation date for the issue. If not provided, it will default to the issue's effective date.",
+                    "example": "2022-01-01T00:00:00.000Z"
                   },
                   "deviations": {
                     "type": [
@@ -722,7 +786,7 @@
                             "string",
                             "null"
                           ],
-                          "default": "2025-12-24T00:22:36.574Z",
+                          "default": "2026-04-17T21:50:12.653Z",
                           "description": "The date the deviation was created",
                           "example": "2022-01-01T00:00:00.000Z"
                         },
@@ -740,12 +804,21 @@
                             "adjustedLevel": {
                               "type": "string",
                               "enum": [
+                                "NOT_SET",
                                 "CHILL",
                                 "LOW",
                                 "MODERATE",
                                 "HIGH",
                                 "CRITICAL"
                               ]
+                            },
+                            "acceptanceStatusDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "The date the deviation status was accepted or rejected",
+                              "example": "2022-01-01T00:00:00.000Z"
                             }
                           },
                           "required": [
@@ -770,7 +843,8 @@
                         "createdAt": "2022-01-01T00:00:00Z",
                         "deviationMetadata": {
                           "status": "PENDING",
-                          "adjustedLevel": "MODERATE"
+                          "adjustedLevel": "MODERATE",
+                          "acceptanceStatusDate": "2022-01-01T00:00:00.000Z"
                         }
                       }
                     ]
@@ -953,9 +1027,9 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           }
@@ -963,6 +1037,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getIssueById": {
+                "$ref": "#/components/links/getIssueById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1002,9 +1081,9 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           }
@@ -1032,6 +1111,7 @@
                   "originalLevel": {
                     "type": "string",
                     "enum": [
+                      "NOT_SET",
                       "CHILL",
                       "LOW",
                       "MODERATE",
@@ -1212,7 +1292,10 @@
                     ]
                   },
                   "dueDate": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "description": "The date the issue is due",
                     "example": "2022-01-01T00:00:00.000Z"
                   },
@@ -1246,6 +1329,21 @@
                     "type": "string",
                     "description": "The date the issue was created",
                     "example": "2022-01-01T00:00:00Z"
+                  },
+                  "internetReachableVulnerability": {
+                    "type": "boolean",
+                    "description": "Whether the issue represents an internet-reachable vulnerability.",
+                    "example": false
+                  },
+                  "likelyExploitableVulnerability": {
+                    "type": "boolean",
+                    "description": "Whether the issue represents a likely-exploitable vulnerability.",
+                    "example": false
+                  },
+                  "evaluationDate": {
+                    "type": "string",
+                    "description": "The evaluation date for the issue.",
+                    "example": "2022-01-01T00:00:00.000Z"
                   },
                   "deviations": {
                     "type": "array",
@@ -1292,7 +1390,8 @@
                         "createdAt": "2022-01-01T00:00:00Z",
                         "deviationMetadata": {
                           "status": "PENDING",
-                          "adjustedLevel": "MODERATE"
+                          "adjustedLevel": "MODERATE",
+                          "acceptanceStatusDate": "2022-01-01T00:00:00.000Z"
                         }
                       }
                     ]
@@ -1448,6 +1547,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "patchIssueById": {
+                "$ref": "#/components/links/patchIssueById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1475,6 +1579,7 @@
                     "level": {
                       "type": "string",
                       "enum": [
+                        "NOT_SET",
                         "CHILL",
                         "LOW",
                         "MODERATE",
@@ -1487,6 +1592,7 @@
                     "originalLevel": {
                       "type": "string",
                       "enum": [
+                        "NOT_SET",
                         "CHILL",
                         "LOW",
                         "MODERATE",
@@ -1689,6 +1795,30 @@
                       "description": "The date the issue was created",
                       "example": "2022-01-01T00:00:00Z"
                     },
+                    "internetReachableVulnerability": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ],
+                      "description": "Whether the issue represents an internet-reachable vulnerability.",
+                      "example": false
+                    },
+                    "likelyExploitableVulnerability": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ],
+                      "description": "Whether the issue represents a likely-exploitable vulnerability.",
+                      "example": false
+                    },
+                    "evaluationDate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The evaluation date for the issue.",
+                      "example": "2022-01-01T00:00:00.000Z"
+                    },
                     "deviations": {
                       "type": [
                         "array",
@@ -1707,7 +1837,8 @@
                           "createdAt": "2022-01-01T00:00:00Z",
                           "deviationMetadata": {
                             "status": "PENDING",
-                            "adjustedLevel": "MODERATE"
+                            "adjustedLevel": "MODERATE",
+                            "acceptanceStatusDate": "2022-02-01T00:00:00.000Z"
                           }
                         }
                       ]
@@ -1841,9 +1972,9 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           }
@@ -1851,6 +1982,52 @@
         "responses": {
           "200": {
             "description": "200 Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/issues/oscal": {
+      "get": {
+        "tags": [
+          "Issues"
+        ],
+        "operationId": "getIssuesOscal",
+        "summary": "Download POAM OSCAL XML",
+        "description": "Downloads Plan of Action & Milestones (POAM) data in OSCAL XML format. When a `projectId` is provided, returns the POAM for that specific project. When omitted, returns a combined POAM for all projects in the workspace.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "projectId",
+            "description": "An id that represents a project within the Paramify application.",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "An id that represents a project within the Paramify application.",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "POAM OSCAL XML document"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -1885,9 +2062,9 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
@@ -1966,9 +2143,9 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           }
@@ -2110,18 +2287,18 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "recommendationId",
+            "description": "An id that represents a recommendation within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/recommendationId"
             },
             "required": true
           }
@@ -2129,6 +2306,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getRecommendationById": {
+                "$ref": "#/components/links/getRecommendationById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -2168,18 +2350,18 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "recommendationId",
+            "description": "An id that represents a recommendation within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/recommendationId"
             },
             "required": true
           }
@@ -2275,6 +2457,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "patchRecommendationById": {
+                "$ref": "#/components/links/patchRecommendationById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -2404,18 +2591,18 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "recommendationId",
+            "description": "An id that represents a recommendation within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/recommendationId"
             },
             "required": true
           }
@@ -2457,9 +2644,9 @@
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
@@ -2532,14 +2719,15 @@
           "Deviations (\"Excuses\" in the Paramify application)"
         ],
         "summary": "Create a new deviation on the specified issue",
+        "description": "Creates a new deviation on the issue specified by the `issueId` path parameter. The `id` value of the deviation returned can be used as the `deviationId` parameter in the `deviations` route.Note that if not provided, the `acceptanceStatusDate` field will be set to the current date if the status field is set to accepted or rejected.",
         "operationId": "postDeviation",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           }
@@ -2572,7 +2760,7 @@
                       "string",
                       "null"
                     ],
-                    "default": "2025-12-24T00:22:36.574Z",
+                    "default": "2026-04-17T21:50:12.653Z",
                     "description": "The date the deviation was created",
                     "example": "2022-01-01T00:00:00.000Z"
                   },
@@ -2590,12 +2778,21 @@
                       "adjustedLevel": {
                         "type": "string",
                         "enum": [
+                          "NOT_SET",
                           "CHILL",
                           "LOW",
                           "MODERATE",
                           "HIGH",
                           "CRITICAL"
                         ]
+                      },
+                      "acceptanceStatusDate": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "description": "The date the deviation status was accepted or rejected",
+                        "example": "2022-01-01T00:00:00.000Z"
                       }
                     },
                     "required": [
@@ -2657,23 +2854,24 @@
           "Deviations (\"Excuses\" in the Paramify application)"
         ],
         "summary": "Get the deviation by ID",
+        "description": "Returns the deviation specified by the `deviationId` path parameter and associated with the issue specified by `issueId`. The `id` value of the deviation returned can be used as the `deviationId` parameter in the `deviations` route.",
         "operationId": "getDeviationById",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "deviationId",
+            "description": "An id that represents a deviation (\"Excuse\") within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/deviationId"
             },
             "required": true
           }
@@ -2681,6 +2879,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getDeviationById": {
+                "$ref": "#/components/links/getDeviationById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -2715,23 +2918,23 @@
         ],
         "summary": "Updates the deviation by ID",
         "operationId": "patchDeviationById",
-        "description": "Updates the deviation specified by the deviationId. Upon successful operation, all fields that are not arrays will be overwritten. Fields that accept array values will add the provided values to the existing values.",
+        "description": "Updates the deviation specified by the `deviationId` path parameter and associated with the issue specified by `issueId`. Upon successful operation, all fields that are not arrays will be overwritten. Fields that accept array values will add the provided values to the existing values.Note that if not provided, the `acceptanceStatusDate` field will be set to the current date if the status field is set to accepted or rejected.",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "deviationId",
+            "description": "An id that represents a deviation (\"Excuse\") within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/deviationId"
             },
             "required": true
           }
@@ -2779,6 +2982,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "patchDeviationById": {
+                "$ref": "#/components/links/patchDeviationById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -2830,12 +3038,21 @@
                             "null"
                           ],
                           "enum": [
+                            "NOT_SET",
                             "CHILL",
                             "LOW",
                             "MODERATE",
                             "HIGH",
                             "CRITICAL"
                           ]
+                        },
+                        "acceptanceStatusDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "The date the deviation status was accepted or rejected",
+                          "example": "2022-01-01T00:00:00.000Z"
                         }
                       },
                       "required": [
@@ -2881,23 +3098,24 @@
           "Deviations (\"Excuses\" in the Paramify application)"
         ],
         "summary": "Permanently deletes the deviation by ID. This operation is irreversible.",
+        "description": "Deletes the deviation specified by the `deviationId` path parameter (scoped to the issue specified by `issueId`). Warning: This action is irreversible.",
         "operationId": "deleteDeviationById",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "deviationId",
+            "description": "An id that represents a deviation (\"Excuse\") within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/deviationId"
             },
             "required": true
           }
@@ -2932,15 +3150,16 @@
         "tags": [
           "Milestones (\"Remediation Activities\" in the Paramify application)"
         ],
-        "summary": "Retrieves all milestones for the specified issue.",
         "operationId": "getMilestones",
+        "summary": "Retrieves all milestones for the specified issue.",
+        "description": "Gets all milestones associated with the issue specified by the `issueId` path parameter, and optionally filters by one or more milestone IDs. The `id` value of the milestone(s) returned can be used as the `milestoneId` parameter in other milestone routes.",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
@@ -2965,8 +3184,8 @@
           "200": {
             "description": "200 Ok",
             "links": {
-              "getMilestone": {
-                "$ref": "#/components/links/getMilestone"
+              "getMilestones": {
+                "$ref": "#/components/links/getMilestones"
               }
             },
             "content": {
@@ -3055,13 +3274,14 @@
         ],
         "operationId": "postMilestone",
         "summary": "Creates a new milestone on the specified issue.",
+        "description": "Creates a new milestone associated with the issue specified by the `issueId` path parameter. The `id` value of the milestone returned can be used as the `milestoneId` parameter in other milestone routes.",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           }
@@ -3161,22 +3381,23 @@
         ],
         "operationId": "getMilestoneById",
         "summary": "Retrieves a milestone by ID.",
+        "description": "Returns the milestone specified by the `milestoneId` path parameter and associated with the given `issueId`. The `id` value of the milestone returned can be used as the `milestoneId` parameter in other milestone routes.",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "milestoneId",
+            "description": "An id that represents a milestone within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/milestoneId"
             },
             "required": true
           }
@@ -3184,6 +3405,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getMilestoneById": {
+                "$ref": "#/components/links/getMilestoneById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -3259,22 +3485,23 @@
         ],
         "operationId": "patchMilestoneById",
         "summary": "Updates a milestone by ID. Only provided fields are modified.",
+        "description": "Updates the milestone specified by the `milestoneId` path parameter. Only the fields provided in the request body will be modified; all other fields will remain unchanged.",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "milestoneId",
+            "description": "An id that represents a milestone within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/milestoneId"
             },
             "required": true
           }
@@ -3322,6 +3549,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "patchMilestoneById": {
+                "$ref": "#/components/links/patchMilestoneById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -3398,22 +3630,23 @@
         ],
         "operationId": "deleteMilestoneById",
         "summary": "Permanently deletes a milestone by ID. This operation is irreversible.",
+        "description": "Deletes the milestone specified by the `milestoneId` path parameter and associated with the given `issueId`. Warning: This action is irreversible.",
         "parameters": [
           {
             "in": "path",
             "name": "issueId",
+            "description": "An id that represents an issue within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/issueId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "milestoneId",
+            "description": "An id that represents a milestone within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/milestoneId"
             },
             "required": true
           }
@@ -3450,7 +3683,7 @@
         ],
         "operationId": "getEvidence",
         "summary": "Get all evidence",
-        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs) or referenceId (custom identifiers like \"EVD-1\"). Returns array of evidence objects with associated artifacts.",
+        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs) or referenceId (custom identifiers like \"EVD-1\"). Use the dedicated artifacts endpoint to retrieve artifacts for a specific evidence.",
         "parameters": [
           {
             "in": "query",
@@ -3489,6 +3722,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getEvidence": {
+                "$ref": "#/components/links/getEvidence"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -3532,41 +3770,48 @@
                             "description": "Additional notes or comments about the evidence (converted from rich text)",
                             "example": "Special attention needed for new department users"
                           },
-                          "artifacts": {
-                            "type": "array",
-                            "items": {
-                              "$ref": "#/components/schemas/ArtifactResponse"
-                            },
-                            "description": "The artifacts of the evidence",
-                            "example": [
-                              {
-                                "id": "123e4567-e89b-12d3-a456-426614174000",
-                                "title": "Artifact Title",
-                                "originalFileName": "Artifact Original File Name",
-                                "pathname": "Artifact Pathname",
-                                "note": "Artifact Note",
-                                "isUrl": true,
-                                "fileType": "Artifact File Type",
-                                "createdAt": "2022-01-01T00:00:00Z",
-                                "createdBy": {
-                                  "username": "testuser",
-                                  "email": "test@example.com"
-                                },
-                                "effectiveDate": "2022-01-01T00:00:00Z"
-                              }
-                            ]
-                          },
                           "automated": {
                             "type": "boolean",
                             "description": "Indicates whether this evidence was collected through automated processes",
                             "example": true
+                          },
+                          "artifactCount": {
+                            "type": "integer",
+                            "description": "The number of artifacts associated with this evidence",
+                            "example": 3
+                          },
+                          "frequency": {
+                            "type": "string",
+                            "enum": [
+                              "NOT_SET",
+                              "DAILY",
+                              "THREE_DAY",
+                              "WEEKLY",
+                              "BIWEEKLY",
+                              "MONTHLY",
+                              "QUARTERLY",
+                              "BIANNUAL",
+                              "ANNUAL"
+                            ],
+                            "description": "The frequency of evidence artifacts collection",
+                            "example": "MONTHLY"
+                          },
+                          "startDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date",
+                            "description": "The start date for the evidence artifacts frequency schedule (YYYY-MM-DD)",
+                            "example": "2024-01-01"
                           }
                         },
                         "required": [
                           "id",
                           "name",
-                          "artifacts",
-                          "automated"
+                          "automated",
+                          "artifactCount",
+                          "frequency"
                         ]
                       }
                     }
@@ -3661,41 +3906,48 @@
                       "description": "Additional notes or comments about the evidence (converted from rich text)",
                       "example": "Special attention needed for new department users"
                     },
-                    "artifacts": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ArtifactResponse"
-                      },
-                      "description": "The artifacts of the evidence",
-                      "example": [
-                        {
-                          "id": "123e4567-e89b-12d3-a456-426614174000",
-                          "title": "Artifact Title",
-                          "originalFileName": "Artifact Original File Name",
-                          "pathname": "Artifact Pathname",
-                          "note": "Artifact Note",
-                          "isUrl": true,
-                          "fileType": "Artifact File Type",
-                          "createdAt": "2022-01-01T00:00:00Z",
-                          "createdBy": {
-                            "username": "testuser",
-                            "email": "test@example.com"
-                          },
-                          "effectiveDate": "2022-01-01T00:00:00Z"
-                        }
-                      ]
-                    },
                     "automated": {
                       "type": "boolean",
                       "description": "Indicates whether this evidence was collected through automated processes",
                       "example": true
+                    },
+                    "artifactCount": {
+                      "type": "integer",
+                      "description": "The number of artifacts associated with this evidence",
+                      "example": 3
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_SET",
+                        "DAILY",
+                        "THREE_DAY",
+                        "WEEKLY",
+                        "BIWEEKLY",
+                        "MONTHLY",
+                        "QUARTERLY",
+                        "BIANNUAL",
+                        "ANNUAL"
+                      ],
+                      "description": "The frequency of evidence artifacts collection",
+                      "example": "MONTHLY"
+                    },
+                    "startDate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date",
+                      "description": "The start date for the evidence artifacts frequency schedule (YYYY-MM-DD)",
+                      "example": "2024-01-01"
                     }
                   },
                   "required": [
                     "id",
                     "name",
-                    "artifacts",
-                    "automated"
+                    "automated",
+                    "artifactCount",
+                    "frequency"
                   ]
                 }
               }
@@ -3729,14 +3981,14 @@
         ],
         "operationId": "getEvidenceById",
         "summary": "Get evidence by ID",
-        "description": "Retrieves a specific evidence record by its internal ID (UUID). Returns complete evidence object with all associated artifacts. Instructions and remarks are converted from rich text.",
+        "description": "Retrieves a specific evidence record by its internal ID (UUID). Instructions and remarks are converted from rich text. Use the dedicated artifacts endpoint to retrieve artifacts.",
         "parameters": [
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           }
@@ -3744,6 +3996,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getEvidenceById": {
+                "$ref": "#/components/links/getEvidenceById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -3782,43 +4039,50 @@
                       "description": "Additional notes or comments about the evidence (converted from rich text)",
                       "example": "Special attention needed for new department users"
                     },
-                    "artifacts": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ArtifactResponse"
-                      },
-                      "description": "The artifacts of the evidence",
-                      "example": [
-                        {
-                          "id": "123e4567-e89b-12d3-a456-426614174000",
-                          "title": "Artifact Title",
-                          "originalFileName": "Artifact Original File Name",
-                          "pathname": "Artifact Pathname",
-                          "note": "Artifact Note",
-                          "isUrl": true,
-                          "fileType": "Artifact File Type",
-                          "createdAt": "2022-01-01T00:00:00Z",
-                          "createdBy": {
-                            "username": "testuser",
-                            "email": "test@example.com"
-                          },
-                          "effectiveDate": "2022-01-01T00:00:00Z"
-                        }
-                      ]
-                    },
                     "automated": {
                       "type": "boolean",
                       "description": "Indicates whether this evidence was collected through automated processes",
                       "example": true
+                    },
+                    "artifactCount": {
+                      "type": "integer",
+                      "description": "The number of artifacts associated with this evidence",
+                      "example": 3
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_SET",
+                        "DAILY",
+                        "THREE_DAY",
+                        "WEEKLY",
+                        "BIWEEKLY",
+                        "MONTHLY",
+                        "QUARTERLY",
+                        "BIANNUAL",
+                        "ANNUAL"
+                      ],
+                      "description": "The frequency of evidence artifacts collection",
+                      "example": "MONTHLY"
+                    },
+                    "startDate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date",
+                      "description": "The start date for the evidence artifacts frequency schedule (YYYY-MM-DD)",
+                      "example": "2024-01-01"
                     }
                   },
                   "required": [
                     "id",
                     "name",
-                    "artifacts",
-                    "automated"
+                    "automated",
+                    "artifactCount",
+                    "frequency"
                   ],
-                  "description": "The evidence object with all associated artifacts"
+                  "description": "The evidence object"
                 }
               }
             }
@@ -3854,9 +4118,9 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           }
@@ -3896,10 +4160,30 @@
                     "description": "Additional remarks or notes about the evidence",
                     "example": "Example remarks"
                   },
-                  "automated": {
-                    "type": "boolean",
-                    "description": "Indicates whether this evidence was collected through automated means",
-                    "example": true
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "NOT_SET",
+                      "DAILY",
+                      "THREE_DAY",
+                      "WEEKLY",
+                      "BIWEEKLY",
+                      "MONTHLY",
+                      "QUARTERLY",
+                      "BIANNUAL",
+                      "ANNUAL"
+                    ],
+                    "description": "The frequency of evidence artifacts collection",
+                    "example": "MONTHLY"
+                  },
+                  "startDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "description": "The start date for the evidence artifacts frequency schedule (YYYY-MM-DD)",
+                    "example": "2024-01-01"
                   }
                 }
               }
@@ -3947,41 +4231,48 @@
                       "description": "Additional notes or comments about the evidence (converted from rich text)",
                       "example": "Special attention needed for new department users"
                     },
-                    "artifacts": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ArtifactResponse"
-                      },
-                      "description": "The artifacts of the evidence",
-                      "example": [
-                        {
-                          "id": "123e4567-e89b-12d3-a456-426614174000",
-                          "title": "Artifact Title",
-                          "originalFileName": "Artifact Original File Name",
-                          "pathname": "Artifact Pathname",
-                          "note": "Artifact Note",
-                          "isUrl": true,
-                          "fileType": "Artifact File Type",
-                          "createdAt": "2022-01-01T00:00:00Z",
-                          "createdBy": {
-                            "username": "testuser",
-                            "email": "test@example.com"
-                          },
-                          "effectiveDate": "2022-01-01T00:00:00Z"
-                        }
-                      ]
-                    },
                     "automated": {
                       "type": "boolean",
                       "description": "Indicates whether this evidence was collected through automated processes",
                       "example": true
+                    },
+                    "artifactCount": {
+                      "type": "integer",
+                      "description": "The number of artifacts associated with this evidence",
+                      "example": 3
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_SET",
+                        "DAILY",
+                        "THREE_DAY",
+                        "WEEKLY",
+                        "BIWEEKLY",
+                        "MONTHLY",
+                        "QUARTERLY",
+                        "BIANNUAL",
+                        "ANNUAL"
+                      ],
+                      "description": "The frequency of evidence artifacts collection",
+                      "example": "MONTHLY"
+                    },
+                    "startDate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date",
+                      "description": "The start date for the evidence artifacts frequency schedule (YYYY-MM-DD)",
+                      "example": "2024-01-01"
                     }
                   },
                   "required": [
                     "id",
                     "name",
-                    "artifacts",
-                    "automated"
+                    "automated",
+                    "artifactCount",
+                    "frequency"
                   ],
                   "description": "The updated evidence object as it exists after the operation"
                 }
@@ -4019,9 +4310,9 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           }
@@ -4058,14 +4349,14 @@
         ],
         "operationId": "postEvidenceAssociate",
         "summary": "Associate evidence with a subject",
-        "description": "Associates an evidence record with a subject. The subject can be a control implementation or a solution capability.",
+        "description": "Associates or disassociates an evidence record with a subject. Supported subject types are: `CONTROL_IMPLEMENTATION`, `SOLUTION_CAPABILITY`, `ELEMENT`, and `VALIDATOR`. Use the `associationType` field to connect or disconnect the association.",
         "parameters": [
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           }
@@ -4090,7 +4381,9 @@
                     "type": "string",
                     "enum": [
                       "CONTROL_IMPLEMENTATION",
-                      "SOLUTION_CAPABILITY"
+                      "SOLUTION_CAPABILITY",
+                      "ELEMENT",
+                      "VALIDATOR"
                     ],
                     "description": "The type of subject to associate the evidence with.",
                     "example": "CONTROL_IMPLEMENTATION"
@@ -4148,9 +4441,9 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           },
@@ -4234,6 +4527,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getArtifacts": {
+                "$ref": "#/components/links/getArtifacts"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -4287,9 +4585,9 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           }
@@ -4375,9 +4673,9 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           }
@@ -4441,18 +4739,18 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "artifactId",
+            "description": "An id that represents an artifact within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/artifactId"
             },
             "required": true
           }
@@ -4460,6 +4758,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getArtifactById": {
+                "$ref": "#/components/links/getArtifactById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -4545,6 +4848,49 @@
                       "type": "string",
                       "description": "The date when this artifact was effective or relevant. This may differ from createdAt and represents when the data was actually valid.",
                       "example": "2022-01-01T00:00:00.000Z"
+                    },
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "NOT_SET",
+                              "ERROR"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "result"
+                        ]
+                      },
+                      "description": "Information about the validators that have run or are running on the artifact",
+                      "example": [
+                        {
+                          "id": "123e4567-e89b-12d3-a456-426614174000",
+                          "name": "Validator Name",
+                          "result": "PASS"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -4553,7 +4899,8 @@
                     "pathname",
                     "isUrl",
                     "createdAt",
-                    "createdBy"
+                    "createdBy",
+                    "validators"
                   ],
                   "description": "The single artifact object with detailed metadata and file information"
                 }
@@ -4591,18 +4938,18 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "artifactId",
+            "description": "An id that represents an artifact within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/artifactId"
             },
             "required": true
           }
@@ -4620,6 +4967,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "patchArtifactById": {
+                "$ref": "#/components/links/patchArtifactById"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -4705,6 +5057,49 @@
                       "type": "string",
                       "description": "The date when this artifact was effective or relevant. This may differ from createdAt and represents when the data was actually valid.",
                       "example": "2022-01-01T00:00:00.000Z"
+                    },
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "NOT_SET",
+                              "ERROR"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "result"
+                        ]
+                      },
+                      "description": "Information about the validators that have run or are running on the artifact",
+                      "example": [
+                        {
+                          "id": "123e4567-e89b-12d3-a456-426614174000",
+                          "name": "Validator Name",
+                          "result": "PASS"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -4713,7 +5108,8 @@
                     "pathname",
                     "isUrl",
                     "createdAt",
-                    "createdBy"
+                    "createdBy",
+                    "validators"
                   ],
                   "description": "The artifact as it exists after the update operation, including all current metadata"
                 }
@@ -4751,18 +5147,18 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "artifactId",
+            "description": "An id that represents an artifact within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/artifactId"
             },
             "required": true
           }
@@ -4804,18 +5200,18 @@
           {
             "in": "path",
             "name": "evidenceId",
+            "description": "An id that represents an evidence within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/evidenceId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "artifactId",
+            "description": "An id that represents an artifact within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/artifactId"
             },
             "required": true
           }
@@ -4955,6 +5351,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getAssessments": {
+                "$ref": "#/components/links/getAssessments"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5008,9 +5409,9 @@
           {
             "in": "path",
             "name": "assessmentId",
+            "description": "An id that represents an assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/assessmentId"
             },
             "required": true
           }
@@ -5018,6 +5419,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getAssessment": {
+                "$ref": "#/components/links/getAssessment"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5169,9 +5575,9 @@
           {
             "in": "path",
             "name": "assessmentId",
+            "description": "An id that represents an assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/assessmentId"
             },
             "required": true
           }
@@ -5212,8 +5618,8 @@
           "200": {
             "description": "200 Ok",
             "links": {
-              "uploadArtifact": {
-                "$ref": "#/components/links/uploadArtifact"
+              "postAssessmentIntake": {
+                "$ref": "#/components/links/postAssessmentIntake"
               }
             },
             "content": {
@@ -5269,9 +5675,9 @@
           {
             "in": "path",
             "name": "assessmentId",
+            "description": "An id that represents an assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/assessmentId"
             },
             "required": true
           },
@@ -5327,6 +5733,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getAssessmentCycles": {
+                "$ref": "#/components/links/getAssessmentCycles"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5380,18 +5791,18 @@
           {
             "in": "path",
             "name": "assessmentId",
+            "description": "An id that represents an assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/assessmentId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "cycleId",
+            "description": "An id that represents an assessment cycle within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/cycleId"
             },
             "required": true
           }
@@ -5399,6 +5810,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "getAssessmentCycle": {
+                "$ref": "#/components/links/getAssessmentCycle"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5440,18 +5856,18 @@
           {
             "in": "path",
             "name": "assessmentId",
+            "description": "An id that represents an assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/assessmentId"
             },
             "required": true
           },
           {
             "in": "path",
             "name": "cycleId",
+            "description": "An id that represents an assessment cycle within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/cycleId"
             },
             "required": true
           }
@@ -5480,6 +5896,11 @@
         "responses": {
           "200": {
             "description": "200 Ok",
+            "links": {
+              "postAssessmentCycleIntake": {
+                "$ref": "#/components/links/postAssessmentCycleIntake"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5565,6 +5986,49 @@
                       "type": "string",
                       "description": "The date when this artifact was effective or relevant. This may differ from createdAt and represents when the data was actually valid.",
                       "example": "2022-01-01T00:00:00.000Z"
+                    },
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "result": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "NOT_SET",
+                              "ERROR"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "result"
+                        ]
+                      },
+                      "description": "Information about the validators that have run or are running on the artifact",
+                      "example": [
+                        {
+                          "id": "123e4567-e89b-12d3-a456-426614174000",
+                          "name": "Validator Name",
+                          "result": "PASS"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -5573,7 +6037,8 @@
                     "pathname",
                     "isUrl",
                     "createdAt",
-                    "createdBy"
+                    "createdBy",
+                    "validators"
                   ],
                   "description": "The artifact that was attached to the assessment cycle's intake."
                 }
@@ -5606,6 +6071,7 @@
         "tags": [
           "Audit Assessments"
         ],
+        "operationId": "getAuditAssessments",
         "summary": "Get all audit assessments",
         "description": "Get all audit assessments",
         "responses": {
@@ -5692,15 +6158,15 @@
           "Audit Assessments"
         ],
         "operationId": "getAuditAssessmentById",
-        "summary": "get an audit assessment by ID",
-        "description": "get an audit assessment by ID",
+        "summary": "Get an audit assessment by ID",
+        "description": "Retrieves a specific audit assessment by its internal ID (UUID). Returns the complete audit assessment object with all associated data.",
         "parameters": [
           {
             "in": "path",
             "name": "auditAssessmentId",
+            "description": "An id that represents a audit assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/auditAssessmentId"
             },
             "required": true
           }
@@ -5777,15 +6243,16 @@
         "tags": [
           "Audit Assessment Control Implementations"
         ],
+        "operationId": "getAuditControlImplementations",
         "summary": "Get all control implementations for an audit assessment",
-        "description": "Get all control implementations for an audit assessment",
+        "description": "Retrieves all control implementations associated with the specified audit assessment. Control implementations represent how controls are implemented and tested within the audit context.",
         "parameters": [
           {
             "in": "path",
             "name": "auditAssessmentId",
+            "description": "An id that represents a audit assessment within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/auditAssessmentId"
             },
             "required": true
           }
@@ -5793,11 +6260,6 @@
         "responses": {
           "200": {
             "description": "200 Ok",
-            "links": {
-              "getAuditControlImplementations": {
-                "$ref": "#/components/links/getAuditControlImplementations"
-              }
-            },
             "content": {
               "application/json": {
                 "schema": {
@@ -5872,6 +6334,7 @@
         "tags": [
           "Solution Capabilities"
         ],
+        "operationId": "getSolutionCapabilities",
         "summary": "Get all solution capabilities",
         "description": "Get all solution capabilities",
         "responses": {
@@ -5958,14 +6421,14 @@
         ],
         "operationId": "getSolutionCapabilityById",
         "summary": "Get a solution capability by ID",
-        "description": "Get a solution capability by ID",
+        "description": "Retrieves a specific solution capability by its internal ID (UUID). Returns the complete solution capability object.",
         "parameters": [
           {
             "in": "path",
             "name": "solutionCapabilityId",
+            "description": "The ID that represents a solution capability within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/solutionCapabilityId"
             },
             "required": true
           }
@@ -6174,14 +6637,14 @@
         ],
         "operationId": "getElementById",
         "summary": "Get an element by ID",
-        "description": "Get an element by ID",
+        "description": "Retrieves a specific element by its internal ID (UUID). Returns the complete element object.",
         "parameters": [
           {
             "in": "path",
             "name": "elementId",
+            "description": "An id that represents an element within the Paramify application.",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/elementId"
             },
             "required": true
           }
@@ -6297,6 +6760,204 @@
           }
         }
       }
+    },
+    "/validators": {
+      "get": {
+        "tags": [
+          "Validators"
+        ],
+        "operationId": "getValidators",
+        "summary": "Get all validators",
+        "description": "Returns all validators in the workspace. Each validator is either an AUTOMATED validator (applies a regex to artifact content and evaluates the result with validation rules) or an ATTESTATION validator (presents yes/no questions to a reviewer, optionally with nested follow-up rules).",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ids",
+            "description": "Filter by validator ID. Multiple IDs can be provided.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "description": "Filter by validator ID. Multiple IDs can be provided.",
+              "example": [
+                "e3977e3e-0b77-4e78-81de-f90e3e37e43c",
+                "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "description": "Filter by validator type. AUTOMATED or ATTESTATION.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AUTOMATED",
+                "ATTESTATION"
+              ],
+              "description": "Filter by validator type. AUTOMATED or ATTESTATION.",
+              "example": "AUTOMATED"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "links": {
+              "getValidators": {
+                "$ref": "#/components/links/getValidators"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Validator"
+                      }
+                    }
+                  },
+                  "required": [
+                    "validators"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Validators"
+        ],
+        "operationId": "createValidator",
+        "summary": "Create a validator",
+        "description": "Creates a new validator in the workspace. The validator name must be unique within the workspace. Provide `type: \"AUTOMATED\"` with a `regex` and `validationRules`, or `type: \"ATTESTATION\"` with `attestationRules`. The created validator is returned in the same format as the GET endpoints.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostValidator"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "links": {
+              "createValidator": {
+                "$ref": "#/components/links/createValidator"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Validator"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/validators/{validatorId}": {
+      "get": {
+        "tags": [
+          "Validators"
+        ],
+        "operationId": "getValidatorById",
+        "summary": "Get a validator by ID",
+        "description": "Retrieves a specific validator by its internal ID (UUID). The response shape depends on the validator type: AUTOMATED validators include a `regex` and `validationRules`; ATTESTATION validators include `attestationRules` with up to three layers of nesting.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "validatorId",
+            "description": "The ID that represents a validator within the Paramify application.",
+            "schema": {
+              "$ref": "#/components/schemas/validatorId"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "links": {
+              "getValidatorById": {
+                "$ref": "#/components/links/getValidatorById"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Validator"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6318,7 +6979,7 @@
         "operationId": "getProjects",
         "description": "An `id` value of any of the projects listed in the response can be used as the `projectId` parameter in the `issues` route or the `getProjectById` function.",
         "parameters": {
-          "projectId": "$response.body#/id"
+          "projectId": "$response.body#/projects/0/id"
         }
       },
       "getProjectById": {
@@ -6332,21 +6993,35 @@
         "operationId": "getIssues",
         "description": "The `id` value of the issue(s) returned can be used as the `issueId` parameter in the `issues`, `recommendations`, `deviations`, and `milestones` routes.",
         "parameters": {
-          "projectId": "$response.body#/id"
+          "issueId": "$response.body#/issues/0/id"
         }
       },
       "postIssue": {
         "operationId": "postIssue",
         "description": "The `id` value of the issue returned can be used as the `issueId` parameter in the `issues`, `recommendations`, `deviations`, and `milestones` routes.",
         "parameters": {
-          "projectId": "$response.body#/id"
+          "issueId": "$response.body#/id"
+        }
+      },
+      "getIssueById": {
+        "operationId": "getIssueById",
+        "description": "The `id` value of the issue returned can be used as the `issueId` parameter in the `issues`, `recommendations`, `deviations`, and `milestones` routes.",
+        "parameters": {
+          "issueId": "$response.body#/id"
+        }
+      },
+      "patchIssueById": {
+        "operationId": "patchIssueById",
+        "description": "The `id` value of the issue returned can be used as the `issueId` parameter in the `issues`, `recommendations`, `deviations`, and `milestones` routes.",
+        "parameters": {
+          "issueId": "$response.body#/id"
         }
       },
       "getRecommendations": {
         "operationId": "getRecommendations",
         "description": "The `id` value of the recommendation(s) returned can be used as the `recommendationId` parameter in the `recommendations` route.",
         "parameters": {
-          "recommendationId": "$response.body#/id"
+          "recommendationId": "$response.body#/recommendations/0/id"
         }
       },
       "postRecommendation": {
@@ -6356,11 +7031,25 @@
           "recommendationId": "$response.body#/id"
         }
       },
+      "getRecommendationById": {
+        "operationId": "getRecommendationById",
+        "description": "The `id` value of the recommendation returned can be used as the `recommendationId` parameter in the `recommendations` route.",
+        "parameters": {
+          "recommendationId": "$response.body#/id"
+        }
+      },
+      "patchRecommendationById": {
+        "operationId": "patchRecommendationById",
+        "description": "The `id` value of the recommendation returned can be used as the `recommendationId` parameter in the `recommendations` route.",
+        "parameters": {
+          "recommendationId": "$response.body#/id"
+        }
+      },
       "getDeviations": {
         "operationId": "getDeviations",
         "description": "The `id` value of the deviation(s) returned can be used as the `deviationId` parameter in the `deviations` route.",
         "parameters": {
-          "deviationId": "$response.body#/id"
+          "deviationId": "$response.body#/deviations/0/id"
         }
       },
       "postDeviation": {
@@ -6370,11 +7059,25 @@
           "deviationId": "$response.body#/id"
         }
       },
-      "getMilestone": {
-        "operationId": "getMilestone",
+      "getDeviationById": {
+        "operationId": "getDeviationById",
+        "description": "The `id` value of the deviation returned can be used as the `deviationId` parameter in the `deviations` route.",
+        "parameters": {
+          "deviationId": "$response.body#/id"
+        }
+      },
+      "patchDeviationById": {
+        "operationId": "patchDeviationById",
+        "description": "The `id` value of the deviation returned can be used as the `deviationId` parameter in the `deviations` route.",
+        "parameters": {
+          "deviationId": "$response.body#/id"
+        }
+      },
+      "getMilestones": {
+        "operationId": "getMilestones",
         "description": "The `id` value of the milestone(s) returned can be used as the `milestoneId` parameter in the `milestones` route.",
         "parameters": {
-          "milestoneId": "$response.body#/id"
+          "milestoneId": "$response.body#/milestones/0/id"
         }
       },
       "postMilestone": {
@@ -6384,11 +7087,25 @@
           "milestoneId": "$response.body#/id"
         }
       },
+      "getMilestoneById": {
+        "operationId": "getMilestoneById",
+        "description": "The `id` value of the milestone returned can be used as the `milestoneId` parameter in the `milestones` route.",
+        "parameters": {
+          "milestoneId": "$response.body#/id"
+        }
+      },
+      "patchMilestoneById": {
+        "operationId": "patchMilestoneById",
+        "description": "The `id` value of the milestone returned can be used as the `milestoneId` parameter in the `milestones` route.",
+        "parameters": {
+          "milestoneId": "$response.body#/id"
+        }
+      },
       "getEvidence": {
         "operationId": "getEvidence",
-        "description": "The `id` value of the evidence returned can be used as the `evidenceId` parameter in the `evidence` route.",
+        "description": "The `id` value of the evidence(s) returned can be used as the `evidenceId` parameter in the `evidence` route.",
         "parameters": {
-          "evidenceId": "$response.body#/id"
+          "evidenceId": "$response.body#/evidences/0/id"
         }
       },
       "postEvidence": {
@@ -6398,8 +7115,8 @@
           "evidenceId": "$response.body#/id"
         }
       },
-      "postEvidenceAssociate": {
-        "operationId": "postEvidenceAssociate",
+      "getEvidenceById": {
+        "operationId": "getEvidenceById",
         "description": "The `id` value of the evidence returned can be used as the `evidenceId` parameter in the `evidence` route.",
         "parameters": {
           "evidenceId": "$response.body#/id"
@@ -6407,12 +7124,12 @@
       },
       "getArtifacts": {
         "operationId": "getArtifacts",
-        "description": "The `id` value of the artifact returned can be used as the `artifactId` parameter in the `artifacts` route.",
+        "description": "The `id` value of the artifact(s) returned can be used as the `artifactId` parameter in the `artifacts` route.",
         "parameters": {
-          "artifactId": "$response.body#/id"
+          "artifactId": "$response.body#/artifacts/0/id"
         }
       },
-      "postArtifacts": {
+      "postArtifact": {
         "operationId": "postArtifact",
         "description": "The `id` value of the artifact returned can be used as the `artifactId` parameter in the `artifacts` route.",
         "parameters": {
@@ -6433,59 +7150,123 @@
           "artifactId": "$response.body#/id"
         }
       },
+      "getArtifactById": {
+        "operationId": "getArtifactById",
+        "description": "The `id` value of the artifact returned can be used as the `artifactId` parameter in the `artifacts` route.",
+        "parameters": {
+          "artifactId": "$response.body#/id"
+        }
+      },
+      "patchArtifactById": {
+        "operationId": "patchArtifactById",
+        "description": "The `id` value of the artifact returned can be used as the `artifactId` parameter in the `artifacts` route.",
+        "parameters": {
+          "artifactId": "$response.body#/id"
+        }
+      },
+      "getAssessments": {
+        "operationId": "getAssessments",
+        "description": "The `id` value of the assessment(s) returned can be used as the `assessmentId` parameter in assessment-related routes.",
+        "parameters": {
+          "assessmentId": "$response.body#/assessments/0/id"
+        }
+      },
       "getAssessment": {
         "operationId": "getAssessment",
         "description": "The `assessmentId` value of the assessment returned can be used as the `assessmentId` parameter in assessment-related routes.",
         "parameters": {
-          "assessmentId": "$response.body#/assessmentId"
+          "assessmentId": "$response.body#/id"
         }
       },
       "postAssessmentIntake": {
         "operationId": "postAssessmentIntake",
-        "description": "The `assessmentId` value of the assessment returned can be used as the `assessmentId` parameter in assessment-related routes.",
+        "description": "The `id` value of the artifact(s) returned can be used as the `artifactId` parameter in the `artifacts` routes.",
         "parameters": {
-          "assessmentId": "$response.body#/assessmentId"
+          "artifactId": "$response.body#/artifacts/0/id"
         }
       },
-      "getSolutionCapabilities": {
-        "operationId": "getSolutionCapabilities",
-        "description": "Get all solution capabilities"
-      },
-      "getSolutionCapabilityById": {
-        "operationId": "getSolutionCapabilityById",
-        "description": "Get a solution capability by ID",
+      "getAssessmentCycles": {
+        "operationId": "getAssessmentCycles",
+        "description": "The `id` value of the cycle(s) returned can be used as the `cycleId` parameter in the `assessmentCycles` route.",
         "parameters": {
-          "solutionCapabilityId": "$response.body#/id"
+          "cycleId": "$response.body#/cycles/0/id"
         }
       },
-      "getProjectControlImplementations": {
-        "operationId": "getProjectControlImplementations",
-        "description": "Get all control implementations for a project"
+      "getAssessmentCycle": {
+        "operationId": "getAssessmentCycle",
+        "description": "The `id` value of the cycle returned can be used as the `cycleId` parameter in the `assessmentCycles` route.",
+        "parameters": {
+          "cycleId": "$response.body#/id"
+        }
       },
-      "getAuditControlImplementations": {
-        "operationId": "getAuditControlImplementations",
-        "description": "Get all control implementations for an audit assessment"
+      "postAssessmentCycleIntake": {
+        "operationId": "postAssessmentCycleIntake",
+        "description": "The `id` value of the cycle returned can be used as the `cycleId` parameter in the `assessmentCycles` route.",
+        "parameters": {
+          "cycleId": "$response.body#/id"
+        }
       },
       "getAuditAssessments": {
         "operationId": "getAuditAssessments",
-        "description": "Get all audit assessments"
+        "description": "The `id` value of the audit assessment(s) returned can be used as the `auditAssessmentId` parameter in audit assessment-related routes.",
+        "parameters": {
+          "auditAssessmentId": "$response.body#/auditAssessments/0/id"
+        }
       },
       "getAuditAssessmentById": {
         "operationId": "getAuditAssessmentById",
-        "description": "get an audit assessment by ID",
+        "description": "The `id` value of the audit assessment returned can be used as the `auditAssessmentId` parameter in audit assessment-related routes.",
         "parameters": {
           "auditAssessmentId": "$response.body#/id"
         }
       },
+      "getSolutionCapabilities": {
+        "operationId": "getSolutionCapabilities",
+        "description": "The `id` value of the solution capability(s) returned can be used as the `solutionCapabilityId` parameter in solution capability-related routes.",
+        "parameters": {
+          "solutionCapabilityId": "$response.body#/solutionCapabilities/0/id"
+        }
+      },
+      "getSolutionCapabilityById": {
+        "operationId": "getSolutionCapabilityById",
+        "description": "The `id` value of the solution capability returned can be used as the `solutionCapabilityId` parameter in solution capability-related routes.",
+        "parameters": {
+          "solutionCapabilityId": "$response.body#/id"
+        }
+      },
       "getElements": {
         "operationId": "getElements",
-        "description": "Get all elements"
+        "description": "The `id` value of the element(s) returned can be used as the `elementId` parameter in element-related routes.",
+        "parameters": {
+          "elementId": "$response.body#/elements/0/id"
+        }
       },
       "getElementById": {
         "operationId": "getElementById",
-        "description": "Get an element by ID",
+        "description": "The `id` value of the element returned can be used as the `elementId` parameter in element-related routes.",
         "parameters": {
           "elementId": "$response.body#/id"
+        }
+      },
+      "getValidators": {
+        "operationId": "getValidators",
+        "description": "The `id` value of the validator(s) returned can be used as the `validatorId` parameter in validator-related routes.",
+        "parameters": {
+          "validatorId": "$response.body#/validators/0/id"
+        }
+      },
+      "getValidatorById": {
+        "operationId": "getValidatorById",
+        "description": "The `id` value of the validator returned can be used as the `validatorId` parameter in validator-related routes.",
+        "parameters": {
+          "validatorId": "$response.body#/id"
+        }
+      },
+      "createValidator": {
+        "operationId": "createValidator",
+        "description": "The `id` value of the created validator can be used as the `validatorId` parameter in validator-related routes.",
+        "parameters": {
+          "validatorId": "$response.body#/id"
         }
       }
     },
@@ -6694,6 +7475,12 @@
         ],
         "description": "An object containing information about an API error."
       },
+      "projectId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents a project within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
       "id": {
         "type": "array",
         "items": {
@@ -6716,12 +7503,6 @@
           "FED-1",
           "FED-2"
         ]
-      },
-      "projectId": {
-        "type": "string",
-        "format": "uuid",
-        "description": "An id that represents a project within the Paramify application.",
-        "example": "123e4567-e89b-12d3-a456-426614174000"
       },
       "deviationType": {
         "type": "string",
@@ -6811,6 +7592,7 @@
           "level": {
             "type": "string",
             "enum": [
+              "NOT_SET",
               "CHILL",
               "LOW",
               "MODERATE",
@@ -6823,6 +7605,7 @@
           "originalLevel": {
             "type": "string",
             "enum": [
+              "NOT_SET",
               "CHILL",
               "LOW",
               "MODERATE",
@@ -7025,6 +7808,30 @@
             "description": "The date the issue was created",
             "example": "2022-01-01T00:00:00Z"
           },
+          "internetReachableVulnerability": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the issue represents an internet-reachable vulnerability.",
+            "example": false
+          },
+          "likelyExploitableVulnerability": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the issue represents a likely-exploitable vulnerability.",
+            "example": false
+          },
+          "evaluationDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The evaluation date for the issue.",
+            "example": "2022-01-01T00:00:00.000Z"
+          },
           "deviations": {
             "type": [
               "array",
@@ -7043,7 +7850,8 @@
                 "createdAt": "2022-01-01T00:00:00Z",
                 "deviationMetadata": {
                   "status": "PENDING",
-                  "adjustedLevel": "MODERATE"
+                  "adjustedLevel": "MODERATE",
+                  "acceptanceStatusDate": "2022-02-01T00:00:00.000Z"
                 }
               }
             ]
@@ -7246,12 +8054,21 @@
                   "null"
                 ],
                 "enum": [
+                  "NOT_SET",
                   "CHILL",
                   "LOW",
                   "MODERATE",
                   "HIGH",
                   "CRITICAL"
                 ]
+              },
+              "acceptanceStatusDate": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The date the deviation status was accepted or rejected",
+                "example": "2022-01-01T00:00:00.000Z"
               }
             },
             "required": [
@@ -7404,6 +8221,12 @@
           "dueEnd"
         ]
       },
+      "issueId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents an issue within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
       "IssueObservationTypes": {
         "type": "string",
         "enum": [
@@ -7430,12 +8253,21 @@
           "adjustedLevel": {
             "type": "string",
             "enum": [
+              "NOT_SET",
               "CHILL",
               "LOW",
               "MODERATE",
               "HIGH",
               "CRITICAL"
             ]
+          },
+          "acceptanceStatusDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The date the deviation status was accepted or rejected",
+            "example": "2022-01-01T00:00:00.000Z"
           }
         },
         "description": "Deviation metadata object"
@@ -7456,6 +8288,89 @@
         "type": "string",
         "format": "uuid",
         "description": "An id that represents a milestone within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "PostEvidenceSchema": {
+        "type": "object",
+        "properties": {
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A custom reference identifier for the evidence. Must be unique. If not provided, a system-generated ID will be used.",
+            "example": "EVD-1"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name or title of the evidence",
+            "example": "Example name"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A detailed description of the evidence",
+            "example": "Example description"
+          },
+          "instructions": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Instructions for how to use or interpret this evidence",
+            "example": "Example instructions"
+          },
+          "remarks": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Additional remarks or notes about the evidence",
+            "example": "Example remarks"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "NOT_SET",
+              "DAILY",
+              "THREE_DAY",
+              "WEEKLY",
+              "BIWEEKLY",
+              "MONTHLY",
+              "QUARTERLY",
+              "BIANNUAL",
+              "ANNUAL"
+            ],
+            "description": "The frequency of evidence artifacts collection",
+            "example": "MONTHLY"
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "The start date for the evidence collection frequency schedule (YYYY-MM-DD)",
+            "example": "2024-01-01"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "description": "Schema for creating new evidence records"
+      },
+      "evidenceId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents an evidence within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "artifactId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents an artifact within the Paramify application.",
         "example": "123e4567-e89b-12d3-a456-426614174000"
       },
       "ArtifactResponse": {
@@ -7541,6 +8456,49 @@
             "type": "string",
             "description": "The date when this artifact was effective or relevant. This may differ from createdAt and represents when the data was actually valid.",
             "example": "2022-01-01T00:00:00.000Z"
+          },
+          "validators": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "result": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "PASS",
+                    "FAIL",
+                    "NOT_SET",
+                    "ERROR"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "result"
+              ]
+            },
+            "description": "Information about the validators that have run or are running on the artifact",
+            "example": [
+              {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "Validator Name",
+                "result": "PASS"
+              }
+            ]
           }
         },
         "required": [
@@ -7549,69 +8507,10 @@
           "pathname",
           "isUrl",
           "createdAt",
-          "createdBy"
+          "createdBy",
+          "validators"
         ],
         "description": "Complete artifact object containing all metadata, file information, and creation details. Artifacts can be either uploaded files or URL references."
-      },
-      "PostEvidenceSchema": {
-        "type": "object",
-        "properties": {
-          "referenceId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "A custom reference identifier for the evidence. Must be unique. If not provided, a system-generated ID will be used.",
-            "example": "EVD-1"
-          },
-          "name": {
-            "type": "string",
-            "description": "The name or title of the evidence",
-            "example": "Example name"
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "A detailed description of the evidence",
-            "example": "Example description"
-          },
-          "instructions": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Instructions for how to use or interpret this evidence",
-            "example": "Example instructions"
-          },
-          "remarks": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Additional remarks or notes about the evidence",
-            "example": "Example remarks"
-          },
-          "automated": {
-            "type": [
-              "boolean",
-              "null"
-            ],
-            "description": "Indicates whether this evidence was collected through automated means",
-            "example": true
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "description": "Schema for creating new evidence records"
-      },
-      "artifactId": {
-        "type": "string",
-        "format": "uuid",
-        "description": "An id that represents an artifact within the Paramify application.",
-        "example": "123e4567-e89b-12d3-a456-426614174000"
       },
       "UploadArtifactSchema": {
         "type": "object",
@@ -7663,7 +8562,7 @@
               "string",
               "null"
             ],
-            "default": "2025-12-24T00:22:36.579Z",
+            "default": "2026-04-17T21:50:12.656Z",
             "description": "The date when this URL artifact was effective or relevant. This represents when the content at the URL was valid or applicable. If not provided, defaults to the current date.",
             "example": "2023-01-01T00:00:00.000Z"
           }
@@ -7863,6 +8762,689 @@
           "endDate"
         ],
         "description": "An object containing information about an assessment cycle."
+      },
+      "cycleId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents an assessment cycle within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "auditAssessmentId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents a audit assessment within the Paramify application.",
+        "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+      },
+      "solutionCapabilityId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "The ID that represents a solution capability within the Paramify application.",
+        "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+      },
+      "elementId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "An id that represents an element within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "Validator": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "A UUID that uniquely identifies this validator within Paramify.",
+                "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+              },
+              "name": {
+                "type": "string",
+                "description": "The display name of the validator."
+              },
+              "statement": {
+                "type": "string",
+                "description": "A human-readable description of what this validator checks."
+              },
+              "type": {
+                "type": "string",
+                "const": "AUTOMATED",
+                "description": "AUTOMATED validators apply a regex to artifact content and evaluate the result using one or more validation rules."
+              },
+              "regex": {
+                "type": "string",
+                "description": "The regular expression applied to each incoming artifact.",
+                "example": "(\\d+) errors? found"
+              },
+              "validationRules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "regexOperation": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_COUNT"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_GROUP"
+                            },
+                            "groupNumber": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "groupNumber"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "Describes how the regex match result is extracted before being compared. MATCH_COUNT counts the total number of matches; MATCH_GROUP extracts the content of a specific capture group."
+                    },
+                    "criteria": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "CONTAINS",
+                        "DOES_NOT_CONTAIN",
+                        "ENDS_WITH",
+                        "DOES_NOT_END_WITH",
+                        "EQUALS",
+                        "NOT_EQUALS",
+                        "GREATER_THAN",
+                        "GREATER_THAN_OR_EQUAL_TO",
+                        "LESS_THAN",
+                        "LESS_THAN_OR_EQUAL_TO",
+                        "STARTS_WITH",
+                        "DOES_NOT_START_WITH"
+                      ],
+                      "description": "The comparison operator applied between the extracted regex value and the target value. One of: CONTAINS, DOES_NOT_CONTAIN, ENDS_WITH, DOES_NOT_END_WITH, EQUALS, NOT_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN, LESS_THAN_OR_EQUAL_TO, STARTS_WITH, DOES_NOT_START_WITH.",
+                      "example": "EQUALS"
+                    },
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_COUNT"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_GROUP"
+                            },
+                            "groupNumber": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "CUSTOM_TEXT"
+                            },
+                            "customText": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The right-hand side of the criteria comparison. MATCH_COUNT uses the match count, MATCH_GROUP uses a specific capture group, CUSTOM_TEXT uses a literal string."
+                    }
+                  },
+                  "required": [
+                    "regexOperation",
+                    "criteria",
+                    "value"
+                  ]
+                },
+                "description": "Ordered list of rules that evaluate the regex result. Rules are evaluated in index order."
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "statement",
+              "type",
+              "regex",
+              "validationRules"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "A UUID that uniquely identifies this validator within Paramify.",
+                "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+              },
+              "name": {
+                "type": "string",
+                "description": "The display name of the validator."
+              },
+              "statement": {
+                "type": "string",
+                "description": "A human-readable description of what this validator checks."
+              },
+              "type": {
+                "type": "string",
+                "const": "ATTESTATION",
+                "description": "ATTESTATION validators present a series of yes/no questions to a reviewer. Each question has a disposition for each answer (PASS, FAIL, or BASED_ON_NESTED)."
+              },
+              "attestationRules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "description": "The yes/no question presented to the user."
+                    },
+                    "yesDisposition": {
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "BASED_ON_NESTED"
+                      ],
+                      "description": "The outcome when the user answers Yes."
+                    },
+                    "noDisposition": {
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "BASED_ON_NESTED"
+                      ],
+                      "description": "The outcome when the user answers No."
+                    },
+                    "nestedRules": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "question": {
+                            "type": "string",
+                            "description": "The yes/no question presented to the user."
+                          },
+                          "yesDisposition": {
+                            "type": "string",
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "BASED_ON_NESTED"
+                            ],
+                            "description": "The outcome when the user answers Yes."
+                          },
+                          "noDisposition": {
+                            "type": "string",
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "BASED_ON_NESTED"
+                            ],
+                            "description": "The outcome when the user answers No."
+                          },
+                          "nestedRules": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "question": {
+                                  "type": "string",
+                                  "description": "The yes/no question presented to the user."
+                                },
+                                "yesDisposition": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PASS",
+                                    "FAIL",
+                                    "BASED_ON_NESTED"
+                                  ],
+                                  "description": "The outcome when the user answers Yes."
+                                },
+                                "noDisposition": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PASS",
+                                    "FAIL",
+                                    "BASED_ON_NESTED"
+                                  ],
+                                  "description": "The outcome when the user answers No."
+                                }
+                              },
+                              "required": [
+                                "question",
+                                "yesDisposition",
+                                "noDisposition"
+                              ]
+                            },
+                            "description": "Nested rules for this attestation rule (leaf level, no further nesting)."
+                          }
+                        },
+                        "required": [
+                          "question",
+                          "yesDisposition",
+                          "noDisposition",
+                          "nestedRules"
+                        ]
+                      },
+                      "description": "Nested rules for this attestation rule (up to two more layers deep)."
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "yesDisposition",
+                    "noDisposition",
+                    "nestedRules"
+                  ]
+                },
+                "description": "Ordered list of yes/no questions for this attestation validator. Rules are evaluated in index order. Up to three layers of nesting are supported."
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "statement",
+              "type",
+              "attestationRules"
+            ]
+          }
+        ],
+        "example": {
+          "id": "e3977e3e-0b77-4e78-81de-f90e3e37e43c",
+          "name": "Error Count Validator",
+          "statement": "Checks that no errors appear in the artifact output.",
+          "type": "AUTOMATED",
+          "regex": "(\\d+) errors? found",
+          "validationRules": [
+            {
+              "regexOperation": {
+                "type": "MATCH_COUNT"
+              },
+              "criteria": "EQUALS",
+              "value": {
+                "type": "CUSTOM_TEXT",
+                "customText": "0"
+              }
+            },
+            {
+              "regexOperation": {
+                "type": "MATCH_GROUP",
+                "groupNumber": 1
+              },
+              "criteria": "EQUALS",
+              "value": {
+                "type": "CUSTOM_TEXT",
+                "customText": "0"
+              }
+            }
+          ]
+        }
+      },
+      "PostValidator": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The display name of the validator."
+              },
+              "statement": {
+                "type": "string",
+                "description": "A human-readable description of what this validator checks."
+              },
+              "type": {
+                "type": "string",
+                "const": "AUTOMATED",
+                "description": "AUTOMATED validators apply a regex to artifact content and evaluate the result using one or more validation rules."
+              },
+              "regex": {
+                "type": "string",
+                "description": "The regular expression applied to each incoming artifact.",
+                "example": "(\\d+) errors? found"
+              },
+              "validationRules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "regexOperation": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_COUNT"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_GROUP"
+                            },
+                            "groupNumber": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "groupNumber"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "Describes how the regex match result is extracted before being compared. MATCH_COUNT counts the total number of matches; MATCH_GROUP extracts the content of a specific capture group."
+                    },
+                    "criteria": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "CONTAINS",
+                        "DOES_NOT_CONTAIN",
+                        "ENDS_WITH",
+                        "DOES_NOT_END_WITH",
+                        "EQUALS",
+                        "NOT_EQUALS",
+                        "GREATER_THAN",
+                        "GREATER_THAN_OR_EQUAL_TO",
+                        "LESS_THAN",
+                        "LESS_THAN_OR_EQUAL_TO",
+                        "STARTS_WITH",
+                        "DOES_NOT_START_WITH"
+                      ],
+                      "description": "The comparison operator applied between the extracted regex value and the target value. One of: CONTAINS, DOES_NOT_CONTAIN, ENDS_WITH, DOES_NOT_END_WITH, EQUALS, NOT_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN, LESS_THAN_OR_EQUAL_TO, STARTS_WITH, DOES_NOT_START_WITH.",
+                      "example": "EQUALS"
+                    },
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_COUNT"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "MATCH_GROUP"
+                            },
+                            "groupNumber": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "CUSTOM_TEXT"
+                            },
+                            "customText": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The right-hand side of the criteria comparison. MATCH_COUNT uses the match count, MATCH_GROUP uses a specific capture group, CUSTOM_TEXT uses a literal string."
+                    }
+                  },
+                  "required": [
+                    "regexOperation",
+                    "criteria",
+                    "value"
+                  ]
+                },
+                "description": "Ordered list of rules that evaluate the regex result. Rules are evaluated in index order."
+              }
+            },
+            "required": [
+              "name",
+              "statement",
+              "type",
+              "regex",
+              "validationRules"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The display name of the validator."
+              },
+              "statement": {
+                "type": "string",
+                "description": "A human-readable description of what this validator checks."
+              },
+              "type": {
+                "type": "string",
+                "const": "ATTESTATION",
+                "description": "ATTESTATION validators present a series of yes/no questions to a reviewer. Each question has a disposition for each answer (PASS, FAIL, or BASED_ON_NESTED)."
+              },
+              "attestationRules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "description": "The yes/no question presented to the user."
+                    },
+                    "yesDisposition": {
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "BASED_ON_NESTED"
+                      ],
+                      "description": "The outcome when the user answers Yes."
+                    },
+                    "noDisposition": {
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "BASED_ON_NESTED"
+                      ],
+                      "description": "The outcome when the user answers No."
+                    },
+                    "nestedRules": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "question": {
+                            "type": "string",
+                            "description": "The yes/no question presented to the user."
+                          },
+                          "yesDisposition": {
+                            "type": "string",
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "BASED_ON_NESTED"
+                            ],
+                            "description": "The outcome when the user answers Yes."
+                          },
+                          "noDisposition": {
+                            "type": "string",
+                            "enum": [
+                              "PASS",
+                              "FAIL",
+                              "BASED_ON_NESTED"
+                            ],
+                            "description": "The outcome when the user answers No."
+                          },
+                          "nestedRules": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "question": {
+                                  "type": "string",
+                                  "description": "The yes/no question presented to the user."
+                                },
+                                "yesDisposition": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PASS",
+                                    "FAIL",
+                                    "BASED_ON_NESTED"
+                                  ],
+                                  "description": "The outcome when the user answers Yes."
+                                },
+                                "noDisposition": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PASS",
+                                    "FAIL",
+                                    "BASED_ON_NESTED"
+                                  ],
+                                  "description": "The outcome when the user answers No."
+                                }
+                              },
+                              "required": [
+                                "question",
+                                "yesDisposition",
+                                "noDisposition"
+                              ]
+                            },
+                            "description": "Nested rules for this attestation rule (leaf level, no further nesting)."
+                          }
+                        },
+                        "required": [
+                          "question",
+                          "yesDisposition",
+                          "noDisposition",
+                          "nestedRules"
+                        ]
+                      },
+                      "description": "Nested rules for this attestation rule (up to two more layers deep)."
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "yesDisposition",
+                    "noDisposition",
+                    "nestedRules"
+                  ]
+                },
+                "description": "Ordered list of yes/no questions for this attestation validator. Rules are evaluated in index order. Up to three layers of nesting are supported."
+              }
+            },
+            "required": [
+              "name",
+              "statement",
+              "type",
+              "attestationRules"
+            ]
+          }
+        ],
+        "example": {
+          "name": "Error Count Validator",
+          "statement": "Checks that no errors appear in the artifact output.",
+          "type": "AUTOMATED",
+          "regex": "(\\d+) errors? found",
+          "validationRules": [
+            {
+              "regexOperation": {
+                "type": "MATCH_COUNT"
+              },
+              "criteria": "EQUALS",
+              "value": {
+                "type": "CUSTOM_TEXT",
+                "customText": "0"
+              }
+            },
+            {
+              "regexOperation": {
+                "type": "MATCH_GROUP",
+                "groupNumber": 1
+              },
+              "criteria": "EQUALS",
+              "value": {
+                "type": "CUSTOM_TEXT",
+                "customText": "0"
+              }
+            }
+          ]
+        }
+      },
+      "validatorId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "The ID that represents a validator within the Paramify application.",
+        "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
       }
     },
     "responses": {

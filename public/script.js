@@ -95,15 +95,16 @@ apiButtons.forEach(button => {
     const endpointTemplate = button.getAttribute('data-endpoint-template');
     const requiresProject = button.getAttribute('data-requires-project') === 'true';
     const requiresIssue = button.getAttribute('data-requires-issue') === 'true';
+    const requiresValidator = button.getAttribute('data-requires-validator') === 'true';
     
     // If button requires a project ID, use the template and replace {projectId}
     if (requiresProject && endpointTemplate) {
-      const projectId = document.getElementById('projectId').value;
+      const projectId = document.getElementById('projectId').value.trim();
       if (!projectId) {
         alert('Please select a Project first');
         return;
       }
-      endpoint = endpointTemplate.replace('{projectId}', projectId);
+      endpoint = endpointTemplate.replace('{projectId}', encodeURIComponent(projectId));
     }
     
     // If button requires an issue ID, use the template and replace {issueId}
@@ -113,7 +114,17 @@ apiButtons.forEach(button => {
         alert('Please enter an Issue ID first');
         return;
       }
-      endpoint = endpointTemplate.replace('{issueId}', issueId);
+      endpoint = endpointTemplate.replace('{issueId}', encodeURIComponent(issueId));
+    }
+
+    // If button requires a validator ID, use the template and replace {validatorId}
+    if (requiresValidator && endpointTemplate) {
+      const validatorId = document.getElementById('validatorId').value.trim();
+      if (!validatorId) {
+        alert('Please enter a Validator ID first');
+        return;
+      }
+      endpoint = endpointTemplate.replace('{validatorId}', encodeURIComponent(validatorId));
     }
 
     fetch('/execute', {
