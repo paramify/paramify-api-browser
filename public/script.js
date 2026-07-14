@@ -96,6 +96,8 @@ apiButtons.forEach(button => {
     const requiresProject = button.getAttribute('data-requires-project') === 'true';
     const requiresIssue = button.getAttribute('data-requires-issue') === 'true';
     const requiresValidator = button.getAttribute('data-requires-validator') === 'true';
+    const requiresStack = button.getAttribute('data-requires-stack') === 'true';
+    const requiresScript = button.getAttribute('data-requires-script') === 'true';
     
     // If button requires a project ID, use the template and replace {projectId}
     if (requiresProject && endpointTemplate) {
@@ -125,6 +127,26 @@ apiButtons.forEach(button => {
         return;
       }
       endpoint = endpointTemplate.replace('{validatorId}', encodeURIComponent(validatorId));
+    }
+
+    // If button requires a stack ID, use the template and replace {stackId}
+    if (requiresStack && endpointTemplate) {
+      const stackId = document.getElementById('stackId').value.trim();
+      if (!stackId) {
+        alert('Please enter a Stack ID first');
+        return;
+      }
+      endpoint = endpointTemplate.replace('{stackId}', encodeURIComponent(stackId));
+    }
+
+    // If button requires a script ID, use the template and replace {scriptId}
+    if (requiresScript && endpointTemplate) {
+      const scriptId = document.getElementById('scriptId').value.trim();
+      if (!scriptId) {
+        alert('Please enter a Script ID first');
+        return;
+      }
+      endpoint = endpointTemplate.replace('{scriptId}', encodeURIComponent(scriptId));
     }
 
     fetch('/execute', {

@@ -14,7 +14,7 @@
   <header>
     <h1>Paramify API Browser</h1>
     <div style="margin-top: 6px; font-size: 14px; color: #555;">
-      <span><strong>API Version:</strong> 0.5.1</span>
+      <span><strong>API Version:</strong> 0.6.0</span>
       <span style="margin: 0 8px;">|</span>
       <a href="https://app.paramify.com/api/documentation/" target="_blank" rel="noopener noreferrer">API Docs</a>
     </div>
@@ -79,6 +79,22 @@
           <input type="text" id="validatorId" name="validatorId" placeholder="Enter validator UUID" style="width: 100%; padding: 5px; margin-bottom: 10px; box-sizing: border-box;">
         </div>
         <button class="api-button validator-endpoint" data-endpoint-template="/validators/{validatorId}" data-requires-validator="true">Get Validator by ID</button>
+
+        <h3 style="margin-top: 20px; margin-bottom: 10px; color: #1467FF; border-bottom: 2px solid #1467FF; padding-bottom: 5px;">Stack Endpoints</h3>
+        <button class="api-button" data-endpoint="/stacks">Stacks</button>
+        <div style="margin-bottom: 10px;">
+          <label for="stackId" style="display: block; margin-bottom: 5px; font-weight: bold;">Stack ID:</label>
+          <input type="text" id="stackId" name="stackId" placeholder="Enter stack UUID" style="width: 100%; padding: 5px; margin-bottom: 10px; box-sizing: border-box;">
+        </div>
+        <button class="api-button stack-endpoint" data-endpoint-template="/stacks/{stackId}" data-requires-stack="true">Get Stack by ID</button>
+
+        <h3 style="margin-top: 20px; margin-bottom: 10px; color: #1467FF; border-bottom: 2px solid #1467FF; padding-bottom: 5px;">Script Endpoints</h3>
+        <button class="api-button" data-endpoint="/scripts">Scripts</button>
+        <div style="margin-bottom: 10px;">
+          <label for="scriptId" style="display: block; margin-bottom: 5px; font-weight: bold;">Script ID:</label>
+          <input type="text" id="scriptId" name="scriptId" placeholder="Enter script UUID" style="width: 100%; padding: 5px; margin-bottom: 10px; box-sizing: border-box;">
+        </div>
+        <button class="api-button script-endpoint" data-endpoint-template="/scripts/{scriptId}" data-requires-script="true">Get Script by ID</button>
 <br/>
         <form id="logout-form" action="/logout">
             <button type="submit">Logout</button>
