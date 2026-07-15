@@ -89,64 +89,35 @@ loginForm.addEventListener('submit', async (event) => {
   }
 });
 
+// Turn "assessmentId" into "an Assessment"; "projectId" into "a Project".
+function humanizePlaceholder(name) {
+  const base = name.replace(/Id$/, '');
+  const spaced = base.replace(/([A-Z])/g, ' $1').trim();
+  const words = spaced.split(/\s+/).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  const article = /^[aeiou]/i.test(words) ? 'an' : 'a';
+  return { words, article };
+}
+
 apiButtons.forEach(button => {
   button.addEventListener('click', () => {
     let endpoint = button.getAttribute('data-endpoint');
     const endpointTemplate = button.getAttribute('data-endpoint-template');
-    const requiresProject = button.getAttribute('data-requires-project') === 'true';
-    const requiresIssue = button.getAttribute('data-requires-issue') === 'true';
-    const requiresValidator = button.getAttribute('data-requires-validator') === 'true';
-    const requiresStack = button.getAttribute('data-requires-stack') === 'true';
-    const requiresScript = button.getAttribute('data-requires-script') === 'true';
-    
-    // If button requires a project ID, use the template and replace {projectId}
-    if (requiresProject && endpointTemplate) {
-      const projectId = document.getElementById('projectId').value.trim();
-      if (!projectId) {
-        alert('Please select a Project first');
-        return;
-      }
-      endpoint = endpointTemplate.replace('{projectId}', encodeURIComponent(projectId));
-    }
-    
-    // If button requires an issue ID, use the template and replace {issueId}
-    if (requiresIssue && endpointTemplate) {
-      const issueId = document.getElementById('issueId').value.trim();
-      if (!issueId) {
-        alert('Please enter an Issue ID first');
-        return;
-      }
-      endpoint = endpointTemplate.replace('{issueId}', encodeURIComponent(issueId));
-    }
 
-    // If button requires a validator ID, use the template and replace {validatorId}
-    if (requiresValidator && endpointTemplate) {
-      const validatorId = document.getElementById('validatorId').value.trim();
-      if (!validatorId) {
-        alert('Please enter a Validator ID first');
-        return;
+    // Substitute every {placeholderId} in the template from an input with the same id.
+    if (endpointTemplate) {
+      endpoint = endpointTemplate;
+      const placeholders = [...endpointTemplate.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+      for (const name of placeholders) {
+        const el = document.getElementById(name);
+        const value = el ? el.value.trim() : '';
+        if (!value) {
+          const { words, article } = humanizePlaceholder(name);
+          const verb = el && el.tagName === 'SELECT' ? 'select' : 'enter';
+          alert(`Please ${verb} ${article} ${words} first`);
+          return;
+        }
+        endpoint = endpoint.replace(`{${name}}`, encodeURIComponent(value));
       }
-      endpoint = endpointTemplate.replace('{validatorId}', encodeURIComponent(validatorId));
-    }
-
-    // If button requires a stack ID, use the template and replace {stackId}
-    if (requiresStack && endpointTemplate) {
-      const stackId = document.getElementById('stackId').value.trim();
-      if (!stackId) {
-        alert('Please enter a Stack ID first');
-        return;
-      }
-      endpoint = endpointTemplate.replace('{stackId}', encodeURIComponent(stackId));
-    }
-
-    // If button requires a script ID, use the template and replace {scriptId}
-    if (requiresScript && endpointTemplate) {
-      const scriptId = document.getElementById('scriptId').value.trim();
-      if (!scriptId) {
-        alert('Please enter a Script ID first');
-        return;
-      }
-      endpoint = endpointTemplate.replace('{scriptId}', encodeURIComponent(scriptId));
     }
 
     fetch('/execute', {
