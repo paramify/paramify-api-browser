@@ -154,6 +154,41 @@
           <button class="api-button script-endpoint" data-endpoint-template="/scripts/{scriptId}" data-requires-script="true">Get Script by ID</button>
         </details>
 
+        <details class="endpoint-group">
+          <summary>Custom Tags</summary>
+          <button class="api-button" data-endpoint="/custom-tags">Custom Tags</button>
+          <div style="margin-bottom: 10px;">
+            <label for="entity" class="id-label">Entity Type:</label>
+            <select id="entity" name="entity" class="id-input">
+              <option value="">Select an entity type...</option>
+              <option value="elements">elements</option>
+              <option value="scripts">scripts</option>
+              <option value="risk-solutions">risk-solutions</option>
+              <option value="solution-capabilities">solution-capabilities</option>
+              <option value="issues">issues</option>
+              <option value="tasks">tasks</option>
+              <option value="evidence">evidence</option>
+              <option value="validators">validators</option>
+              <option value="program-requirements">program-requirements</option>
+              <option value="program-controls">program-controls</option>
+              <option value="content-records">content-records</option>
+            </select>
+            <label for="entityId" class="id-label">Entity ID:</label>
+            <input type="text" id="entityId" name="entityId" placeholder="Enter entity UUID" class="id-input">
+          </div>
+          <button class="api-button custom-tag-endpoint" data-endpoint-template="/custom-tags/{entity}/{entityId}" data-requires-custom-tag="true">Custom Tags for Entity</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Pipeline Jobs</summary>
+          <button class="api-button" data-endpoint="/pipeline-jobs">Pipeline Jobs</button>
+          <div style="margin-bottom: 10px;">
+            <label for="pipelineJobId" class="id-label">Pipeline Job ID:</label>
+            <input type="text" id="pipelineJobId" name="pipelineJobId" placeholder="Enter pipeline job UUID" class="id-input">
+          </div>
+          <button class="api-button pipeline-job-endpoint" data-endpoint-template="/pipeline-jobs/{pipelineJobId}" data-requires-pipeline-job="true">Get Pipeline Job by ID</button>
+        </details>
+
         <br/>
         <form id="logout-form" action="/logout">
             <button type="submit">Logout</button>
