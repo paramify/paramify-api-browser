@@ -14,7 +14,7 @@
   <header>
     <h1>Paramify API Browser</h1>
     <div style="margin-top: 6px; font-size: 14px; color: #555;">
-      <span><strong>API Version:</strong> 0.6.0</span>
+      <span><strong>API Version:</strong> 0.9.0</span>
       <span style="margin: 0 8px;">|</span>
       <a href="https://app.paramify.com/api/documentation/" target="_blank" rel="noopener noreferrer">API Docs</a>
     </div>
@@ -67,6 +67,11 @@
           </div>
           <button class="api-button assessment-endpoint" data-endpoint-template="/assessment/{assessmentId}" data-requires-assessment="true">Get Assessment by ID</button>
           <button class="api-button assessment-endpoint" data-endpoint-template="/assessment/{assessmentId}/cycle" data-requires-assessment="true">Assessment Cycles</button>
+          <div style="margin-bottom: 10px;">
+            <label for="cycleId" class="id-label">Assessment Cycle ID:</label>
+            <input type="text" id="cycleId" name="cycleId" placeholder="Enter assessment cycle UUID" class="id-input">
+          </div>
+          <button class="api-button assessment-cycle-endpoint" data-endpoint-template="/assessment/{assessmentId}/cycle/{cycleId}" data-requires-assessment-cycle="true">Get Assessment Cycle by ID</button>
         </details>
 
         <details class="endpoint-group">
@@ -89,6 +94,11 @@
           </div>
           <button class="api-button evidence-endpoint" data-endpoint-template="/evidence/{evidenceId}" data-requires-evidence="true">Get Evidence by ID</button>
           <button class="api-button evidence-endpoint" data-endpoint-template="/evidence/{evidenceId}/artifacts" data-requires-evidence="true">Evidence Artifacts</button>
+          <div style="margin-bottom: 10px;">
+            <label for="artifactId" class="id-label">Artifact ID:</label>
+            <input type="text" id="artifactId" name="artifactId" placeholder="Enter artifact UUID" class="id-input">
+          </div>
+          <button class="api-button artifact-endpoint" data-endpoint-template="/evidence/{evidenceId}/artifacts/{artifactId}" data-requires-artifact="true">Get Artifact by ID</button>
         </details>
 
         <details class="endpoint-group">
@@ -122,6 +132,21 @@
           <button class="api-button issue-endpoint" data-endpoint-template="/issues/{issueId}/recommendations" data-requires-issue="true">Recommendations</button>
           <button class="api-button issue-endpoint" data-endpoint-template="/issues/{issueId}/deviations" data-requires-issue="true">Deviations</button>
           <button class="api-button issue-endpoint" data-endpoint-template="/issues/{issueId}/milestones" data-requires-issue="true">Milestones</button>
+          <div style="margin-bottom: 10px;">
+            <label for="recommendationId" class="id-label">Recommendation ID:</label>
+            <input type="text" id="recommendationId" name="recommendationId" placeholder="Enter recommendation UUID" class="id-input">
+          </div>
+          <button class="api-button recommendation-endpoint" data-endpoint-template="/issues/{issueId}/recommendations/{recommendationId}" data-requires-recommendation="true">Get Recommendation by ID</button>
+          <div style="margin-bottom: 10px;">
+            <label for="deviationId" class="id-label">Deviation ID:</label>
+            <input type="text" id="deviationId" name="deviationId" placeholder="Enter deviation UUID" class="id-input">
+          </div>
+          <button class="api-button deviation-endpoint" data-endpoint-template="/issues/{issueId}/deviations/{deviationId}" data-requires-deviation="true">Get Deviation by ID</button>
+          <div style="margin-bottom: 10px;">
+            <label for="milestoneId" class="id-label">Milestone ID:</label>
+            <input type="text" id="milestoneId" name="milestoneId" placeholder="Enter milestone UUID" class="id-input">
+          </div>
+          <button class="api-button milestone-endpoint" data-endpoint-template="/issues/{issueId}/milestones/{milestoneId}" data-requires-milestone="true">Get Milestone by ID</button>
         </details>
 
         <details class="endpoint-group">
@@ -152,6 +177,41 @@
             <input type="text" id="scriptId" name="scriptId" placeholder="Enter script UUID" class="id-input">
           </div>
           <button class="api-button script-endpoint" data-endpoint-template="/scripts/{scriptId}" data-requires-script="true">Get Script by ID</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Custom Tags</summary>
+          <button class="api-button" data-endpoint="/custom-tags">Custom Tags</button>
+          <div style="margin-bottom: 10px;">
+            <label for="entity" class="id-label">Entity Type:</label>
+            <select id="entity" name="entity" class="id-input">
+              <option value="">Select an entity type...</option>
+              <option value="elements">elements</option>
+              <option value="scripts">scripts</option>
+              <option value="risk-solutions">risk-solutions</option>
+              <option value="solution-capabilities">solution-capabilities</option>
+              <option value="issues">issues</option>
+              <option value="tasks">tasks</option>
+              <option value="evidence">evidence</option>
+              <option value="validators">validators</option>
+              <option value="program-requirements">program-requirements</option>
+              <option value="program-controls">program-controls</option>
+              <option value="content-records">content-records</option>
+            </select>
+            <label for="entityId" class="id-label">Entity ID:</label>
+            <input type="text" id="entityId" name="entityId" placeholder="Enter entity UUID" class="id-input">
+          </div>
+          <button class="api-button custom-tag-endpoint" data-endpoint-template="/custom-tags/{entity}/{entityId}" data-requires-custom-tag="true">Custom Tags for Entity</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Pipeline Jobs</summary>
+          <button class="api-button" data-endpoint="/pipeline-jobs">Pipeline Jobs</button>
+          <div style="margin-bottom: 10px;">
+            <label for="pipelineJobId" class="id-label">Pipeline Job ID:</label>
+            <input type="text" id="pipelineJobId" name="pipelineJobId" placeholder="Enter pipeline job UUID" class="id-input">
+          </div>
+          <button class="api-button pipeline-job-endpoint" data-endpoint-template="/pipeline-jobs/{pipelineJobId}" data-requires-pipeline-job="true">Get Pipeline Job by ID</button>
         </details>
 
         <br/>
