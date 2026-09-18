@@ -1,0 +1,26 @@
+# Wiz Code exception policy for this repository.
+# Docs: https://docs.wiz.io/wiz-docs/docs/exception-management-with-wiz-code#repository-configuration-file-wiz
+#
+# BUILTIN-125 (Sensitive Data, data classifier PII/Name) fires on the bundled
+# Paramify OpenAPI reference spec because its `example.name` and
+# `example.username` fields carry the documentation placeholders "John Doe" and
+# "john.doe". Those are illustrative example values in a published API
+# specification, not real personal data, so the finding is a false positive.
+#
+# Scope is deliberately narrow: this one data classifier, on the API spec file
+# only. Every other Wiz rule, and every other file in the repo, is still
+# scanned normally.
+#
+# Authorized by Isaac Teuscher (Security), 2026-09-18.
+# Per-entry `expires:` (ISO 8601 date-time, e.g. 2027-09-18T00:00:00Z) is
+# supported if this exception should later be time-boxed; intentionally unset.
+ignore:
+  sensitive_data:
+    BUILTIN-125:
+      # Glob so a spec version bump (0.9.2 -> 0.9.3 -> ...) does not reintroduce
+      # the finding. Both the bare and leading-slash forms are listed because the
+      # spec lives at the repository root.
+      prfy-api-documentation-*.json:
+        reason: FALSE_POSITIVE
+      /prfy-api-documentation-*.json:
+        reason: FALSE_POSITIVE
