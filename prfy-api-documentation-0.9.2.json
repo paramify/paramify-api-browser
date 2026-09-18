@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Paramify REST API Documentation",
-    "version": "0.9.0",
+    "version": "0.9.2",
     "description": "This is the REST API documentation for the Paramify application."
   },
   "servers": [
@@ -486,7 +486,7 @@
                   "title": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 255,
+                    "maxLength": 2500,
                     "description": "The title of the issue",
                     "example": "Issue Title Example"
                   },
@@ -1216,7 +1216,7 @@
                     "example": "Issue Title Example",
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 255
+                    "maxLength": 2500
                   },
                   "poamId": {
                     "description": "A user defined identifier for this issue",
@@ -4579,7 +4579,7 @@
                   "effectiveDate": {
                     "description": "The date when this URL artifact was effective or relevant. This represents when the content at the URL was valid or applicable. If not provided, defaults to the current date.",
                     "example": "2023-01-01T00:00:00.000Z",
-                    "default": "2026-09-10T18:25:54.867Z",
+                    "default": "2026-09-18T03:45:41.924Z",
                     "anyOf": [
                       {
                         "type": "string"
@@ -4875,7 +4875,7 @@
         ],
         "operationId": "postArtifactAssociate",
         "summary": "Associate artifact with a subject",
-        "description": "Associates or disassociates an artifact with a subject. Supported subject types are: `CONTROL_IMPLEMENTATION` and `SOLUTION_CAPABILITY`. Use the `associationType` field to connect or disconnect the association. Artifacts can only be associated with control implementations on audit assessments, not with program control implementations.",
+        "description": "Associates or disassociates an artifact with a subject. Supported subject types are: `CONTROL_IMPLEMENTATION`, `SOLUTION_CAPABILITY`, and `EXCUSE`. Use the `associationType` field to connect or disconnect the association. Artifacts can only be associated with control implementations on audit assessments, not with program control implementations.",
         "parameters": [
           {
             "in": "path",
@@ -4916,7 +4916,8 @@
                     "type": "string",
                     "enum": [
                       "CONTROL_IMPLEMENTATION",
-                      "SOLUTION_CAPABILITY"
+                      "SOLUTION_CAPABILITY",
+                      "EXCUSE"
                     ],
                     "description": "The type of subject to associate the artifact with.",
                     "example": "CONTROL_IMPLEMENTATION"
@@ -5847,6 +5848,18 @@
                             "description": "A uuid that uniquely identifies an individual solution capability within Paramify",
                             "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
                           },
+                          "templateReferenceId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The human-readable Solution Capability ID of the account-level template solution capability this capability was instantiated from, or null when the capability was not created from a template",
+                            "example": "SC-01"
+                          },
                           "referenceId": {
                             "anyOf": [
                               {
@@ -5856,13 +5869,27 @@
                                 "type": "null"
                               }
                             ],
-                            "description": "The human-readable Solution Capability ID from the content library, or null if not set",
-                            "example": "SC-01"
+                            "description": "The workspace capability's own human-readable Solution Capability ID, unique within the workspace. Seeded from the template's ID when the capability is instantiated, with a counter appended when that ID is already taken. Null for capabilities created before Paramify began recording this ID",
+                            "example": "SC-01 (1)"
                           },
                           "name": {
                             "type": "string",
                             "description": "The name of the solution capability",
                             "example": "Solution Capability Name"
+                          },
+                          "implementationStatus": {
+                            "type": "string",
+                            "enum": [
+                              "NOT_SET",
+                              "IMPLEMENTED",
+                              "PARTIALLY_IMPLEMENTED",
+                              "PLANNED",
+                              "ALTERNATIVE_IMPLEMENTATION",
+                              "NOT_APPLICABLE",
+                              "NOT_IMPLEMENTED"
+                            ],
+                            "description": "The overall implementation status of the solution capability, rolled up from the statuses of its functions",
+                            "example": "IMPLEMENTED"
                           },
                           "family": {
                             "type": "string",
@@ -5873,14 +5900,350 @@
                             "type": "string",
                             "description": "The subfamily of the solution capability",
                             "example": "Account Management"
+                          },
+                          "risk": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The name of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
+                            "example": "Unauthorized Access"
+                          },
+                          "riskFamily": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The category of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
+                            "example": "Identity and Access"
+                          },
+                          "mainComponent": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                    "description": "A uuid that uniquely identifies the main component within Paramify",
+                                    "example": "b1e9a2c4-6f3d-4a17-9c58-2d0e7b4f81aa"
+                                  },
+                                  "referenceId": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "The human-readable ID of the account template element the main component was created from, or null if it was not created from one",
+                                    "example": "RS-13-02"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "The name of the main component",
+                                    "example": "Main Component Name"
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "The description of the main component",
+                                    "example": "Main Component Description"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "referenceId",
+                                  "name",
+                                  "description"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The main component of the solution capability, or null if one is not set"
+                          },
+                          "owner": {
+                            "anyOf": [
+                              {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "const": "USER",
+                                        "description": "Marks the owner as an individual user, who carries an email address",
+                                        "example": "USER"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                        "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                      },
+                                      "name": {
+                                        "type": "string",
+                                        "description": "The name of the owning user or team",
+                                        "example": "John Doe"
+                                      },
+                                      "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                        "description": "The email address of the owning user",
+                                        "example": "john.doe@example.com"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "id",
+                                      "name",
+                                      "email"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "const": "TEAM",
+                                        "description": "Marks the owner as a team, which carries no email address",
+                                        "example": "TEAM"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                        "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                      },
+                                      "name": {
+                                        "type": "string",
+                                        "description": "The name of the owning user or team",
+                                        "example": "John Doe"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "id",
+                                      "name"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The user or team that owns the solution capability, or null if one is not set"
+                          },
+                          "functions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PROVIDER",
+                                    "INTEGRATOR",
+                                    "END_USER"
+                                  ],
+                                  "description": "Which of the three functions of the solution capability this is",
+                                  "example": "PROVIDER"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "The workspace-configured label for the function",
+                                  "example": "Capability Provider"
+                                },
+                                "narrative": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "The narrative written for the function, rendered as markdown, or null when no narrative has been written",
+                                  "example": "The provider enforces multi-factor authentication for all administrative access."
+                                },
+                                "implementationStatus": {
+                                  "type": "string",
+                                  "enum": [
+                                    "NOT_SET",
+                                    "IMPLEMENTED",
+                                    "PARTIALLY_IMPLEMENTED",
+                                    "PLANNED",
+                                    "ALTERNATIVE_IMPLEMENTATION",
+                                    "NOT_APPLICABLE",
+                                    "NOT_IMPLEMENTED"
+                                  ],
+                                  "description": "The implementation status of the function, which Paramify derives from the function's validators when the function is set to be implementation status by validation",
+                                  "example": "IMPLEMENTED"
+                                },
+                                "responsibleRole": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "format": "uuid",
+                                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                          "description": "A uuid that uniquely identifies the responsible role within Paramify",
+                                          "example": "f6a31c92-4d7e-4b08-9c15-3ea82d07b5c4"
+                                        },
+                                        "name": {
+                                          "type": "string",
+                                          "description": "The full name of the responsible role",
+                                          "example": "Information System Security Officer"
+                                        },
+                                        "shortName": {
+                                          "type": "string",
+                                          "description": "The abbreviated name Paramify displays for the responsible role, which may be empty",
+                                          "example": "ISSO"
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "name",
+                                        "shortName"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "description": "The role accountable for the function, or null when no responsible role has been assigned"
+                                },
+                                "owners": {
+                                  "type": "array",
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "const": "USER",
+                                            "description": "Marks the owner as an individual user, who carries an email address",
+                                            "example": "USER"
+                                          },
+                                          "id": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                            "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                            "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "description": "The name of the owning user or team",
+                                            "example": "John Doe"
+                                          },
+                                          "email": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                            "description": "The email address of the owning user",
+                                            "example": "john.doe@example.com"
+                                          }
+                                        },
+                                        "required": [
+                                          "type",
+                                          "id",
+                                          "name",
+                                          "email"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "type": {
+                                            "type": "string",
+                                            "const": "TEAM",
+                                            "description": "Marks the owner as a team, which carries no email address",
+                                            "example": "TEAM"
+                                          },
+                                          "id": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                            "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                            "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "description": "The name of the owning user or team",
+                                            "example": "John Doe"
+                                          }
+                                        },
+                                        "required": [
+                                          "type",
+                                          "id",
+                                          "name"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "description": "The users and teams that own the function. A function can have several owners, and the list is empty when none are assigned"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "name",
+                                "narrative",
+                                "implementationStatus",
+                                "responsibleRole",
+                                "owners"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "The three functions of the solution capability, always returned in provider, integrator, end user order"
                           }
                         },
                         "required": [
                           "id",
+                          "templateReferenceId",
                           "referenceId",
                           "name",
+                          "implementationStatus",
                           "family",
-                          "subfamily"
+                          "subfamily",
+                          "risk",
+                          "riskFamily",
+                          "mainComponent",
+                          "owner",
+                          "functions"
                         ],
                         "additionalProperties": false
                       }
@@ -5957,6 +6320,18 @@
                       "description": "A uuid that uniquely identifies an individual solution capability within Paramify",
                       "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
                     },
+                    "templateReferenceId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The human-readable Solution Capability ID of the account-level template solution capability this capability was instantiated from, or null when the capability was not created from a template",
+                      "example": "SC-01"
+                    },
                     "referenceId": {
                       "anyOf": [
                         {
@@ -5966,13 +6341,27 @@
                           "type": "null"
                         }
                       ],
-                      "description": "The human-readable Solution Capability ID from the content library, or null if not set",
-                      "example": "SC-01"
+                      "description": "The workspace capability's own human-readable Solution Capability ID, unique within the workspace. Seeded from the template's ID when the capability is instantiated, with a counter appended when that ID is already taken. Null for capabilities created before Paramify began recording this ID",
+                      "example": "SC-01 (1)"
                     },
                     "name": {
                       "type": "string",
                       "description": "The name of the solution capability",
                       "example": "Solution Capability Name"
+                    },
+                    "implementationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_SET",
+                        "IMPLEMENTED",
+                        "PARTIALLY_IMPLEMENTED",
+                        "PLANNED",
+                        "ALTERNATIVE_IMPLEMENTATION",
+                        "NOT_APPLICABLE",
+                        "NOT_IMPLEMENTED"
+                      ],
+                      "description": "The overall implementation status of the solution capability, rolled up from the statuses of its functions",
+                      "example": "IMPLEMENTED"
                     },
                     "family": {
                       "type": "string",
@@ -5983,14 +6372,350 @@
                       "type": "string",
                       "description": "The subfamily of the solution capability",
                       "example": "Account Management"
+                    },
+                    "risk": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The name of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
+                      "example": "Unauthorized Access"
+                    },
+                    "riskFamily": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The category of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
+                      "example": "Identity and Access"
+                    },
+                    "mainComponent": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                              "description": "A uuid that uniquely identifies the main component within Paramify",
+                              "example": "b1e9a2c4-6f3d-4a17-9c58-2d0e7b4f81aa"
+                            },
+                            "referenceId": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The human-readable ID of the account template element the main component was created from, or null if it was not created from one",
+                              "example": "RS-13-02"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "The name of the main component",
+                              "example": "Main Component Name"
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The description of the main component",
+                              "example": "Main Component Description"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "referenceId",
+                            "name",
+                            "description"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The main component of the solution capability, or null if one is not set"
+                    },
+                    "owner": {
+                      "anyOf": [
+                        {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "const": "USER",
+                                  "description": "Marks the owner as an individual user, who carries an email address",
+                                  "example": "USER"
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                  "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "The name of the owning user or team",
+                                  "example": "John Doe"
+                                },
+                                "email": {
+                                  "type": "string",
+                                  "format": "email",
+                                  "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                  "description": "The email address of the owning user",
+                                  "example": "john.doe@example.com"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "id",
+                                "name",
+                                "email"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "const": "TEAM",
+                                  "description": "Marks the owner as a team, which carries no email address",
+                                  "example": "TEAM"
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                  "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "The name of the owning user or team",
+                                  "example": "John Doe"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "id",
+                                "name"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The user or team that owns the solution capability, or null if one is not set"
+                    },
+                    "functions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "PROVIDER",
+                              "INTEGRATOR",
+                              "END_USER"
+                            ],
+                            "description": "Which of the three functions of the solution capability this is",
+                            "example": "PROVIDER"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The workspace-configured label for the function",
+                            "example": "Capability Provider"
+                          },
+                          "narrative": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The narrative written for the function, rendered as markdown, or null when no narrative has been written",
+                            "example": "The provider enforces multi-factor authentication for all administrative access."
+                          },
+                          "implementationStatus": {
+                            "type": "string",
+                            "enum": [
+                              "NOT_SET",
+                              "IMPLEMENTED",
+                              "PARTIALLY_IMPLEMENTED",
+                              "PLANNED",
+                              "ALTERNATIVE_IMPLEMENTATION",
+                              "NOT_APPLICABLE",
+                              "NOT_IMPLEMENTED"
+                            ],
+                            "description": "The implementation status of the function, which Paramify derives from the function's validators when the function is set to be implementation status by validation",
+                            "example": "IMPLEMENTED"
+                          },
+                          "responsibleRole": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                    "description": "A uuid that uniquely identifies the responsible role within Paramify",
+                                    "example": "f6a31c92-4d7e-4b08-9c15-3ea82d07b5c4"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "The full name of the responsible role",
+                                    "example": "Information System Security Officer"
+                                  },
+                                  "shortName": {
+                                    "type": "string",
+                                    "description": "The abbreviated name Paramify displays for the responsible role, which may be empty",
+                                    "example": "ISSO"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name",
+                                  "shortName"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The role accountable for the function, or null when no responsible role has been assigned"
+                          },
+                          "owners": {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "USER",
+                                      "description": "Marks the owner as an individual user, who carries an email address",
+                                      "example": "USER"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                      "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                      "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "The name of the owning user or team",
+                                      "example": "John Doe"
+                                    },
+                                    "email": {
+                                      "type": "string",
+                                      "format": "email",
+                                      "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                      "description": "The email address of the owning user",
+                                      "example": "john.doe@example.com"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "name",
+                                    "email"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "TEAM",
+                                      "description": "Marks the owner as a team, which carries no email address",
+                                      "example": "TEAM"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                      "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                      "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "The name of the owning user or team",
+                                      "example": "John Doe"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "name"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ],
+                              "type": "object"
+                            },
+                            "description": "The users and teams that own the function. A function can have several owners, and the list is empty when none are assigned"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "name",
+                          "narrative",
+                          "implementationStatus",
+                          "responsibleRole",
+                          "owners"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "The three functions of the solution capability, always returned in provider, integrator, end user order"
                     }
                   },
                   "required": [
                     "id",
+                    "templateReferenceId",
                     "referenceId",
                     "name",
+                    "implementationStatus",
                     "family",
-                    "subfamily"
+                    "subfamily",
+                    "risk",
+                    "riskFamily",
+                    "mainComponent",
+                    "owner",
+                    "functions"
                   ],
                   "additionalProperties": false
                 }
@@ -7503,7 +8228,7 @@
         ],
         "operationId": "postPipelineIntake",
         "summary": "Upload an artifact to a pipeline's current cycle and optionally queue its work",
-        "description": "Uploads the file as an artifact and attaches it to the intake of the current cycle of the pipeline named by `pipelineId`, opening a cycle that starts today if no other cycles are open.\n\nThe assessment's file intake preset must be configured. If it is not, requests will be refused with `400`.\n\nSupplying an `operation` also queues that work over every artifact on the cycle that no run has processed and no unfinished job is already processing, the artifact just uploaded included. An `operation` requires the `PIPELINE_PROCESS` permission on the API key on top of `PIPELINE_INTAKE`, and `PROCESS_CLOSE` requires `PIPELINE_CLOSE` as well.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Uploads the file as an artifact and attaches it to the intake of the current cycle of the pipeline named by `pipelineId`, opening a cycle that starts on the workspace's current day if no other cycles are open.\n\nThe assessment's file intake preset must be configured. If it is not, requests will be refused with `400`.\n\nSupplying an `operation` also queues that work over every artifact on the cycle that no run has processed and no unfinished job is already processing, the artifact just uploaded included. An `operation` requires the `PIPELINE_PROCESS` permission on the API key on top of `PIPELINE_INTAKE`, and `PROCESS_CLOSE` requires `PIPELINE_CLOSE` as well.\n\nSupplying `cycle.startDate` sets the day a newly opened cycle starts on, read in the workspace's timezone. It applies only when the request opens a cycle: if the pipeline already carries one in progress, that cycle takes the upload and the value has no effect. Omit it to start the cycle on the workspace's current day.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -7776,7 +8501,7 @@
                     "description": "The CSV, XML, JSON, or Nessus file to be uploaded as an artifact. Only CSV, XML, JSON, and Nessus files are supported. The original filename will be preserved and used as the default title if no title is specified in the metadata.\n\n**IMPORTANT**: Filenames containing certain special characters may cause upload errors. URL-encode your filename to avoid issues -- it will be decoded automatically."
                   },
                   "artifact": {
-                    "$ref": "#/components/schemas/PipelineIntakeArtifactSchema"
+                    "$ref": "#/components/schemas/PipelineCycleIntakeArtifactSchema"
                   }
                 },
                 "required": [
@@ -8379,7 +9104,7 @@
         "example": "configuration",
         "type": "string",
         "minLength": 1,
-        "maxLength": 255
+        "maxLength": 2500
       },
       "asset": {
         "description": "A string that represents an asset of an issue.",
@@ -9480,9 +10205,25 @@
               "PROCESS",
               "PROCESS_CLOSE"
             ]
+          },
+          "cycle": {
+            "$ref": "#/components/schemas/PipelineIntakeCycleSchema"
           }
         },
-        "description": "Metadata for the artifact being attached, and the processing the attachment should queue. All fields are optional."
+        "description": "Metadata for the artifact being attached, the processing the attachment should queue, and how the cycle should be opened if this request opens one. All fields are optional."
+      },
+      "PipelineIntakeCycleSchema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "description": "The day a newly opened cycle starts on, as `YYYY-MM-DD` read in the workspace's timezone. Applies only when this request opens a cycle: if the pipeline already carries one in progress, that cycle takes the upload and this value has no effect. Omit to start the cycle on the workspace's current day. Unrelated to the artifact's `effectiveDate`",
+            "example": "2022-01-01",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "description": "How the cycle should be opened, for the case where this request is the one that opens it. All fields are optional."
       },
       "PostPipelineProcess": {
         "type": "object",
@@ -9511,6 +10252,50 @@
           }
         },
         "description": "The artifacts to process."
+      },
+      "PipelineCycleIntakeArtifactSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "A descriptive title for the artifact. If not provided, the original filename will be used as the title.",
+            "example": "Q1 2024 Vulnerability Assessment Report",
+            "type": "string"
+          },
+          "note": {
+            "description": "Additional notes or comments about the artifact. Use this field to provide context, explanations, or any relevant information about the artifact.",
+            "example": "This report contains the results of the quarterly vulnerability scan conducted on our production infrastructure.",
+            "type": "string"
+          },
+          "effectiveDate": {
+            "description": "The date when this artifact was effective or relevant. This may differ from the upload date and represents when the data or document was actually valid. If not provided, defaults to the current date.",
+            "example": "2022-01-01T00:00:00.000Z",
+            "type": "string"
+          },
+          "channelId": {
+            "description": "The id of the channel that owns the artifact",
+            "example": "123e4567-e89b-12d3-a456-426614174000",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operation": {
+            "description": "Queue processing for the cycle once the artifact is attached. `PROCESS` processes the cycle, and `PROCESS_CLOSE` processes it and then closes the cycle in the same run. Omit to attach the artifact without queueing anything",
+            "example": "PROCESS",
+            "type": "string",
+            "enum": [
+              "PROCESS",
+              "PROCESS_CLOSE"
+            ]
+          }
+        },
+        "description": "Metadata for the artifact being attached, and the processing the attachment should queue. All fields are optional."
       },
       "pipelineJobId": {
         "type": "string",
@@ -9636,7 +10421,7 @@
           "systemShortName": {
             "type": "string"
           },
-          "complianceProgramType": {
+          "programType": {
             "anyOf": [
               {
                 "type": "string"
@@ -9668,7 +10453,7 @@
           "programImpactLevels",
           "systemName",
           "systemShortName",
-          "complianceProgramType",
+          "programType",
           "complianceProfile"
         ],
         "additionalProperties": false,
@@ -9780,14 +10565,11 @@
           },
           "title": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
             "description": "The title of the issue",
             "example": "Issue Title Example"
           },
           "poamId": {
             "type": "string",
-            "maxLength": 255,
             "description": "A user defined identifier for this issue",
             "example": "FED-1"
           },
@@ -9828,9 +10610,7 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
+                    "type": "string"
                   },
                   "email": {
                     "anyOf": [
@@ -10267,9 +11047,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
+            "type": "string"
           },
           "subtype": {
             "type": "string",
@@ -10331,9 +11109,7 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
+            "type": "string"
           },
           "type": {
             "type": "string",
