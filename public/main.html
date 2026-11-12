@@ -14,7 +14,7 @@
   <header>
     <h1>Paramify API Browser</h1>
     <div style="margin-top: 6px; font-size: 14px; color: #555;">
-      <span><strong>API Version:</strong> 0.10.0</span>
+      <span><strong>API Version:</strong> 0.14.0</span>
       <span style="margin: 0 8px;">|</span>
       <a href="https://app.paramify.com/api/documentation/" target="_blank" rel="noopener noreferrer">API Docs</a>
     </div>
@@ -99,6 +99,26 @@
             <input type="text" id="artifactId" name="artifactId" placeholder="Enter artifact UUID" class="id-input">
           </div>
           <button class="api-button artifact-endpoint" data-endpoint-template="/evidence/{evidenceId}/artifacts/{artifactId}" data-requires-artifact="true">Get Artifact by ID</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Artifact Requests</summary>
+          <button class="api-button" data-endpoint="/artifact-requests">Artifact Requests</button>
+          <div style="margin-bottom: 10px;">
+            <label for="artifactRequestId" class="id-label">Artifact Request ID:</label>
+            <input type="text" id="artifactRequestId" name="artifactRequestId" placeholder="Enter artifact request UUID" class="id-input">
+          </div>
+          <button class="api-button artifact-request-endpoint" data-endpoint-template="/artifact-requests/{artifactRequestId}" data-requires-artifact-request="true">Get Artifact Request by ID</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Batches</summary>
+          <button class="api-button" data-endpoint="/batches">Batches</button>
+          <div style="margin-bottom: 10px;">
+            <label for="batchId" class="id-label">Batch ID:</label>
+            <input type="text" id="batchId" name="batchId" placeholder="Enter batch UUID" class="id-input">
+          </div>
+          <button class="api-button batch-endpoint" data-endpoint-template="/batches/{batchId}" data-requires-batch="true">Get Batch by ID</button>
         </details>
 
         <details class="endpoint-group">
