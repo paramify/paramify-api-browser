@@ -14,7 +14,7 @@
   <header>
     <h1>Paramify API Browser</h1>
     <div style="margin-top: 6px; font-size: 14px; color: #555;">
-      <span><strong>API Version:</strong> 0.9.2</span>
+      <span><strong>API Version:</strong> 0.10.0</span>
       <span style="margin: 0 8px;">|</span>
       <a href="https://app.paramify.com/api/documentation/" target="_blank" rel="noopener noreferrer">API Docs</a>
     </div>
@@ -197,6 +197,7 @@
               <option value="program-requirements">program-requirements</option>
               <option value="program-controls">program-controls</option>
               <option value="content-records">content-records</option>
+              <option value="excuses">excuses</option>
             </select>
             <label for="entityId" class="id-label">Entity ID:</label>
             <input type="text" id="entityId" name="entityId" placeholder="Enter entity UUID" class="id-input">
@@ -212,6 +213,11 @@
             <input type="text" id="pipelineJobId" name="pipelineJobId" placeholder="Enter pipeline job UUID" class="id-input">
           </div>
           <button class="api-button pipeline-job-endpoint" data-endpoint-template="/pipeline-jobs/{pipelineJobId}" data-requires-pipeline-job="true">Get Pipeline Job by ID</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Audit Logs</summary>
+          <button class="api-button" data-endpoint="/audit-logs">Audit Logs</button>
         </details>
 
         <br/>

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Paramify REST API Documentation",
-    "version": "0.9.2",
+    "version": "0.10.0",
     "description": "This is the REST API documentation for the Paramify application."
   },
   "servers": [
@@ -516,8 +516,37 @@
                     "description": "The original risk level of the issue",
                     "example": "HIGH"
                   },
+                  "numericRiskRating": {
+                    "description": "The numeric risk rating of the issue. Send it on the scale implied by the originalLevelSource you set; the two are not cross-validated. A later processing run that rescores this issue overwrites both.",
+                    "example": 8.1,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "originalLevelSource": {
+                    "description": "The scoring mechanism the numeric risk rating came from.",
+                    "example": "NIST_CVSS_4_0",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "NIST_CVSS_4_0",
+                          "NIST_CVSS_3_1",
+                          "MECHANISM_RISK_RATING"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "pointOfContact": {
-                    "description": "The point of contact for the issue",
+                    "description": "The point of contact for the issue. Matched against an existing person by name or email, and created as a new person when nothing matches.",
                     "example": {
                       "name": "John Doe",
                       "email": "john@example.com"
@@ -1237,28 +1266,64 @@
                       "CRITICAL"
                     ]
                   },
+                  "numericRiskRating": {
+                    "description": "The numeric risk rating of the issue. Send it on the scale implied by the originalLevelSource you set; the two are not cross-validated. A later processing run that rescores this issue overwrites both.",
+                    "example": 8.1,
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "originalLevelSource": {
+                    "description": "The scoring mechanism the numeric risk rating came from. A later processing run that rescores this issue overwrites the value set here.",
+                    "example": "NIST_CVSS_3_1",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "NIST_CVSS_4_0",
+                          "NIST_CVSS_3_1",
+                          "MECHANISM_RISK_RATING"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "pointOfContact": {
-                    "description": "The point of contact for the issue",
+                    "description": "The point of contact for the issue. Matched against an existing person by name or email, and created as a new person when nothing matches. Pass `null` to clear the point of contact; omit to leave it unchanged.",
                     "example": {
                       "name": "John Doe",
                       "email": "john@example.com"
                     },
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 255
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email",
+                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "email"
+                        ]
                       },
-                      "email": {
-                        "type": "string",
-                        "format": "email",
-                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                      {
+                        "type": "null"
                       }
-                    },
-                    "required": [
-                      "name",
-                      "email"
                     ]
                   },
                   "pluginId": {
@@ -3335,7 +3400,7 @@
         ],
         "operationId": "getEvidence",
         "summary": "Get all evidence",
-        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs) or referenceId (custom identifiers like \"EVD-1\"). Use the dedicated artifacts endpoint to retrieve artifacts for a specific evidence.",
+        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs), referenceId (custom identifiers like \"EVD-1\"), or validatorId (the validators paired with the evidence). Use the dedicated artifacts endpoint to retrieve artifacts for a specific evidence.",
         "parameters": [
           {
             "in": "query",
@@ -3370,6 +3435,23 @@
               }
             },
             "description": "Filter by reference ID. Multiple reference IDs can be provided to retrieve multiple evidence records."
+          },
+          {
+            "in": "query",
+            "name": "validatorId",
+            "schema": {
+              "description": "Filter by validator ID. Returns the evidence records paired with any of the given validators.",
+              "example": [
+                "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "description": "Filter by validator ID. Returns the evidence records paired with any of the given validators."
           }
         ],
         "responses": {
@@ -3427,6 +3509,13 @@
                             "description": "Indicates whether this evidence was collected through automated processes",
                             "example": true
                           },
+                          "validators": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/EvidenceValidatorResponse"
+                            },
+                            "description": "The validators paired with this evidence, each with the id of its pairing"
+                          },
                           "artifactCount": {
                             "type": "integer",
                             "minimum": -9007199254740991,
@@ -3476,6 +3565,7 @@
                           "id",
                           "name",
                           "automated",
+                          "validators",
                           "artifactCount",
                           "frequency",
                           "channels"
@@ -3675,6 +3765,13 @@
                       "description": "Indicates whether this evidence was collected through automated processes",
                       "example": true
                     },
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidenceValidatorResponse"
+                      },
+                      "description": "The validators paired with this evidence, each with the id of its pairing"
+                    },
                     "artifactCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -3724,6 +3821,7 @@
                     "id",
                     "name",
                     "automated",
+                    "validators",
                     "artifactCount",
                     "frequency",
                     "channels"
@@ -3831,6 +3929,13 @@
                       "description": "Indicates whether this evidence was collected through automated processes",
                       "example": true
                     },
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidenceValidatorResponse"
+                      },
+                      "description": "The validators paired with this evidence, each with the id of its pairing"
+                    },
                     "artifactCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -3880,6 +3985,7 @@
                     "id",
                     "name",
                     "automated",
+                    "validators",
                     "artifactCount",
                     "frequency",
                     "channels"
@@ -4060,6 +4166,13 @@
                       "description": "Indicates whether this evidence was collected through automated processes",
                       "example": true
                     },
+                    "validators": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidenceValidatorResponse"
+                      },
+                      "description": "The validators paired with this evidence, each with the id of its pairing"
+                    },
                     "artifactCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -4109,6 +4222,7 @@
                     "id",
                     "name",
                     "automated",
+                    "validators",
                     "artifactCount",
                     "frequency",
                     "channels"
@@ -4579,7 +4693,7 @@
                   "effectiveDate": {
                     "description": "The date when this URL artifact was effective or relevant. This represents when the content at the URL was valid or applicable. If not provided, defaults to the current date.",
                     "example": "2023-01-01T00:00:00.000Z",
-                    "default": "2026-09-18T03:45:41.924Z",
+                    "default": "2026-10-01T01:27:30.521Z",
                     "anyOf": [
                       {
                         "type": "string"
@@ -5827,7 +5941,25 @@
         ],
         "operationId": "getSolutionCapabilities",
         "summary": "Get all solution capabilities",
-        "description": "Get all solution capabilities",
+        "description": "Retrieves all solution capabilities from your workspace. Filter by referenceId to find a capability's internal ID.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "referenceId",
+            "schema": {
+              "description": "Filter by reference ID. Repeat to match several solution capabilities.",
+              "example": [
+                "SC-01",
+                "SC-02"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Filter by reference ID. Repeat to match several solution capabilities."
+          }
+        ],
         "responses": {
           "200": {
             "description": "200 Ok",
@@ -6216,6 +6348,52 @@
                                     "type": "object"
                                   },
                                   "description": "The users and teams that own the function. A function can have several owners, and the list is empty when none are assigned"
+                                },
+                                "validatorEvidencePairs": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "validatorEvidencePairId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the validator-evidence pair within Paramify",
+                                        "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+                                      },
+                                      "validatorId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the validator of the pair within Paramify",
+                                        "example": "c4a8e2f6-1b3d-4f5a-8e7c-9d0b1a2c3e4f"
+                                      },
+                                      "evidenceId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the evidence of the pair within Paramify",
+                                        "example": "9e1f3a5c-7b2d-4c6e-a8f0-2d4b6c8e0a1f"
+                                      },
+                                      "source": {
+                                        "type": "string",
+                                        "enum": [
+                                          "MANUAL",
+                                          "MENTION"
+                                        ],
+                                        "description": "MANUAL when associated directly, MENTION when mentioned in the function narrative",
+                                        "example": "MANUAL"
+                                      }
+                                    },
+                                    "required": [
+                                      "validatorEvidencePairId",
+                                      "validatorId",
+                                      "evidenceId",
+                                      "source"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "description": "The validator-evidence pairs associated with the function"
                                 }
                               },
                               "required": [
@@ -6224,7 +6402,8 @@
                                 "narrative",
                                 "implementationStatus",
                                 "responsibleRole",
-                                "owners"
+                                "owners",
+                                "validatorEvidencePairs"
                               ],
                               "additionalProperties": false
                             },
@@ -6688,6 +6867,52 @@
                               "type": "object"
                             },
                             "description": "The users and teams that own the function. A function can have several owners, and the list is empty when none are assigned"
+                          },
+                          "validatorEvidencePairs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "validatorEvidencePairId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the validator-evidence pair within Paramify",
+                                  "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+                                },
+                                "validatorId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the validator of the pair within Paramify",
+                                  "example": "c4a8e2f6-1b3d-4f5a-8e7c-9d0b1a2c3e4f"
+                                },
+                                "evidenceId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the evidence of the pair within Paramify",
+                                  "example": "9e1f3a5c-7b2d-4c6e-a8f0-2d4b6c8e0a1f"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MANUAL",
+                                    "MENTION"
+                                  ],
+                                  "description": "MANUAL when associated directly, MENTION when mentioned in the function narrative",
+                                  "example": "MANUAL"
+                                }
+                              },
+                              "required": [
+                                "validatorEvidencePairId",
+                                "validatorId",
+                                "evidenceId",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "The validator-evidence pairs associated with the function"
                           }
                         },
                         "required": [
@@ -6696,7 +6921,8 @@
                           "narrative",
                           "implementationStatus",
                           "responsibleRole",
-                          "owners"
+                          "owners",
+                          "validatorEvidencePairs"
                         ],
                         "additionalProperties": false
                       },
@@ -6724,6 +6950,522 @@
             "links": {
               "getSolutionCapabilityById": {
                 "$ref": "#/components/links/getSolutionCapabilityById"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Solution Capabilities"
+        ],
+        "operationId": "patchSolutionCapabilityById",
+        "summary": "Update a solution capability by ID",
+        "description": "Replaces the MANUAL validator-evidence pairs of each supplied function. Omitted functions are untouched and MENTION pairs are never removed. Resets the completed reviews of the solution capability.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solutionCapabilityId",
+            "schema": {
+              "$ref": "#/components/schemas/solutionCapabilityId"
+            },
+            "required": true,
+            "description": "The ID that represents a solution capability within the Paramify application."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchSolutionCapability"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                      "description": "A uuid that uniquely identifies an individual solution capability within Paramify",
+                      "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+                    },
+                    "templateReferenceId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The human-readable Solution Capability ID of the account-level template solution capability this capability was instantiated from, or null when the capability was not created from a template",
+                      "example": "SC-01"
+                    },
+                    "referenceId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The workspace capability's own human-readable Solution Capability ID, unique within the workspace. Seeded from the template's ID when the capability is instantiated, with a counter appended when that ID is already taken. Null for capabilities created before Paramify began recording this ID",
+                      "example": "SC-01 (1)"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the solution capability",
+                      "example": "Solution Capability Name"
+                    },
+                    "implementationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_SET",
+                        "IMPLEMENTED",
+                        "PARTIALLY_IMPLEMENTED",
+                        "PLANNED",
+                        "ALTERNATIVE_IMPLEMENTATION",
+                        "NOT_APPLICABLE",
+                        "NOT_IMPLEMENTED"
+                      ],
+                      "description": "The overall implementation status of the solution capability, rolled up from the statuses of its functions",
+                      "example": "IMPLEMENTED"
+                    },
+                    "family": {
+                      "type": "string",
+                      "description": "The family of the solution capability",
+                      "example": "Access Control"
+                    },
+                    "subfamily": {
+                      "type": "string",
+                      "description": "The subfamily of the solution capability",
+                      "example": "Account Management"
+                    },
+                    "risk": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The name of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
+                      "example": "Unauthorized Access"
+                    },
+                    "riskFamily": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The category of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
+                      "example": "Identity and Access"
+                    },
+                    "mainComponent": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                              "description": "A uuid that uniquely identifies the main component within Paramify",
+                              "example": "b1e9a2c4-6f3d-4a17-9c58-2d0e7b4f81aa"
+                            },
+                            "referenceId": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The human-readable ID of the account template element the main component was created from, or null if it was not created from one",
+                              "example": "RS-13-02"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "The name of the main component",
+                              "example": "Main Component Name"
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The description of the main component",
+                              "example": "Main Component Description"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "referenceId",
+                            "name",
+                            "description"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The main component of the solution capability, or null if one is not set"
+                    },
+                    "owner": {
+                      "anyOf": [
+                        {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "const": "USER",
+                                  "description": "Marks the owner as an individual user, who carries an email address",
+                                  "example": "USER"
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                  "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "The name of the owning user or team",
+                                  "example": "John Doe"
+                                },
+                                "email": {
+                                  "type": "string",
+                                  "format": "email",
+                                  "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                  "description": "The email address of the owning user",
+                                  "example": "john.doe@example.com"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "id",
+                                "name",
+                                "email"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "const": "TEAM",
+                                  "description": "Marks the owner as a team, which carries no email address",
+                                  "example": "TEAM"
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                  "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "description": "The name of the owning user or team",
+                                  "example": "John Doe"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "id",
+                                "name"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The user or team that owns the solution capability, or null if one is not set"
+                    },
+                    "functions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "PROVIDER",
+                              "INTEGRATOR",
+                              "END_USER"
+                            ],
+                            "description": "Which of the three functions of the solution capability this is",
+                            "example": "PROVIDER"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The workspace-configured label for the function",
+                            "example": "Capability Provider"
+                          },
+                          "narrative": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The narrative written for the function, rendered as markdown, or null when no narrative has been written",
+                            "example": "The provider enforces multi-factor authentication for all administrative access."
+                          },
+                          "implementationStatus": {
+                            "type": "string",
+                            "enum": [
+                              "NOT_SET",
+                              "IMPLEMENTED",
+                              "PARTIALLY_IMPLEMENTED",
+                              "PLANNED",
+                              "ALTERNATIVE_IMPLEMENTATION",
+                              "NOT_APPLICABLE",
+                              "NOT_IMPLEMENTED"
+                            ],
+                            "description": "The implementation status of the function, which Paramify derives from the function's validators when the function is set to be implementation status by validation",
+                            "example": "IMPLEMENTED"
+                          },
+                          "responsibleRole": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                    "description": "A uuid that uniquely identifies the responsible role within Paramify",
+                                    "example": "f6a31c92-4d7e-4b08-9c15-3ea82d07b5c4"
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "description": "The full name of the responsible role",
+                                    "example": "Information System Security Officer"
+                                  },
+                                  "shortName": {
+                                    "type": "string",
+                                    "description": "The abbreviated name Paramify displays for the responsible role, which may be empty",
+                                    "example": "ISSO"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "name",
+                                  "shortName"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "The role accountable for the function, or null when no responsible role has been assigned"
+                          },
+                          "owners": {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "USER",
+                                      "description": "Marks the owner as an individual user, who carries an email address",
+                                      "example": "USER"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                      "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                      "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "The name of the owning user or team",
+                                      "example": "John Doe"
+                                    },
+                                    "email": {
+                                      "type": "string",
+                                      "format": "email",
+                                      "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                      "description": "The email address of the owning user",
+                                      "example": "john.doe@example.com"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "name",
+                                    "email"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "TEAM",
+                                      "description": "Marks the owner as a team, which carries no email address",
+                                      "example": "TEAM"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                      "description": "A uuid that uniquely identifies the owning user or team within Paramify",
+                                      "example": "d2c8f4b6-7e19-4a35-b0c7-5f1a9e3d46bb"
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "description": "The name of the owning user or team",
+                                      "example": "John Doe"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "name"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ],
+                              "type": "object"
+                            },
+                            "description": "The users and teams that own the function. A function can have several owners, and the list is empty when none are assigned"
+                          },
+                          "validatorEvidencePairs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "validatorEvidencePairId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the validator-evidence pair within Paramify",
+                                  "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+                                },
+                                "validatorId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the validator of the pair within Paramify",
+                                  "example": "c4a8e2f6-1b3d-4f5a-8e7c-9d0b1a2c3e4f"
+                                },
+                                "evidenceId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the evidence of the pair within Paramify",
+                                  "example": "9e1f3a5c-7b2d-4c6e-a8f0-2d4b6c8e0a1f"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MANUAL",
+                                    "MENTION"
+                                  ],
+                                  "description": "MANUAL when associated directly, MENTION when mentioned in the function narrative",
+                                  "example": "MANUAL"
+                                }
+                              },
+                              "required": [
+                                "validatorEvidencePairId",
+                                "validatorId",
+                                "evidenceId",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "The validator-evidence pairs associated with the function"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "name",
+                          "narrative",
+                          "implementationStatus",
+                          "responsibleRole",
+                          "owners",
+                          "validatorEvidencePairs"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "The three functions of the solution capability, always returned in provider, integrator, end user order"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "templateReferenceId",
+                    "referenceId",
+                    "name",
+                    "implementationStatus",
+                    "family",
+                    "subfamily",
+                    "risk",
+                    "riskFamily",
+                    "mainComponent",
+                    "owner",
+                    "functions"
+                  ],
+                  "additionalProperties": false,
+                  "description": "The updated solution capability object as it exists after the operation"
+                }
               }
             }
           },
@@ -9017,6 +9759,260 @@
           }
         }
       }
+    },
+    "/audit-logs": {
+      "get": {
+        "tags": [
+          "Audit Logs"
+        ],
+        "operationId": "getAuditLogs",
+        "summary": "Get audit logs",
+        "description": "Returns workspace audit log entries, newest first, in cursor-paginated pages. Use `activityTypes` to filter by activity type such as `HISTORY`, `READ`, `DOWNLOAD`, or `COMMENT`. Use `resourceType` and `resourceId` to filter by the entity the activity targeted. Use `startDate` and `endDate` (YYYY-MM-DD) to filter by when the activity occurred. Date ranges are inclusive. Pass `nextCursor` from a previous response as `cursor` to retrieve older entries.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "activityTypes",
+            "schema": {
+              "description": "Filter by activity type. Multiple values can be provided. Omit to return all activity types.",
+              "example": [
+                "HISTORY",
+                "READ"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "COMMENT",
+                  "HISTORY",
+                  "READ",
+                  "DOWNLOAD",
+                  "AUTHENTICATION"
+                ]
+              }
+            },
+            "description": "Filter by activity type. Multiple values can be provided. Omit to return all activity types."
+          },
+          {
+            "in": "query",
+            "name": "resourceType",
+            "schema": {
+              "description": "Filter by the type of entity the activity targeted.",
+              "example": "ISSUE",
+              "type": "string",
+              "enum": [
+                "EXCUSE",
+                "ARTIFACT_REQUEST",
+                "PROGRAM_INFORMATION_TYPE",
+                "PROGRAM_CONTROL",
+                "PROGRAM_REQUIREMENT",
+                "PROGRAM_REQUIREMENT_ASSESSMENT",
+                "PROGRAM_SECURITY_OBJECTIVE",
+                "PROGRAM_PRIVACY",
+                "PROGRAM_OVERVIEW",
+                "PROGRAM_SETTING",
+                "PROGRAM_USER_COUNT",
+                "PROGRAM_INTERCONNECTIONS",
+                "ELEMENT",
+                "ELEMENT_COMPONENT",
+                "ELEMENT_PARTY",
+                "ELEMENT_ROLE",
+                "ELEMENT_LOCATION",
+                "ELEMENT_DATA",
+                "INVENTORY_ITEM",
+                "SOLUTION_CAPABILITY",
+                "TEMPLATE_SOLUTION",
+                "COLLECTION",
+                "PROGRAM",
+                "ATTACHMENT",
+                "TERM",
+                "CONTACT",
+                "USER",
+                "WORKSPACE",
+                "IMPORT",
+                "ISSUE",
+                "TASK",
+                "ASSESSMENT",
+                "ASSESSMENT_CYCLE",
+                "EVIDENCE",
+                "TEMPLATE_SOLUTION_NARRATIVE",
+                "PROFILE",
+                "PROFILE_RISK_SOLUTION",
+                "COMPLIANCE_PROFILE",
+                "VALIDATOR",
+                "SCRIPT",
+                "VALIDATION_RULE",
+                "CONTENT_RECORD",
+                "CATALOG_CONTROL",
+                "PROFILE_CONTROL",
+                "PROGRAM_TYPE",
+                "CATALOG",
+                "FILE_INTAKE_PRESET",
+                "MASTER_DATA_PUBLISHING",
+                "CHANNEL",
+                "AI_SKILL",
+                "INVENTORY",
+                "CONTROL_PARAMETER_PRESET",
+                "IDENTIFIER_SETTING",
+                "AI_FEATURES",
+                "RISK",
+                "STACK",
+                "ISSUE_TRACKER_INTEGRATION",
+                "TEAM",
+                "SLACK_INTEGRATION",
+                "DEVIATION",
+                "RECOMMENDATION",
+                "MILESTONE",
+                "PIPELINE_JOB",
+                "ARTIFACT",
+                "CUSTOM_TAG",
+                "AUDIT_ASSESSMENT"
+              ]
+            },
+            "description": "Filter by the type of entity the activity targeted."
+          },
+          {
+            "in": "query",
+            "name": "resourceId",
+            "schema": {
+              "description": "Filter by the UUID of the targeted entity.",
+              "example": "b144e4d8-5c1b-5515-a242-00856705e2eb",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": "Filter by the UUID of the targeted entity."
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "description": "Return audit logs created on or after this date. Date format: YYYY-MM-DD.",
+              "example": "2024-01-15",
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "description": "Return audit logs created on or after this date. Date format: YYYY-MM-DD."
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "description": "Return audit logs created on or before this date. Date format: YYYY-MM-DD.",
+              "example": "2024-01-31",
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "description": "Return audit logs created on or before this date. Date format: YYYY-MM-DD."
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 100,
+              "description": "The maximum number of audit log entries to return, newest first. Must be between 1 and 500. Defaults to 100 when not provided.",
+              "example": 100,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "description": "The maximum number of audit log entries to return, newest first. Must be between 1 and 500. Defaults to 100 when not provided."
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "description": "The cursor from a previous response. Pass `nextCursor` here to retrieve the next page of older entries.",
+              "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": "The cursor from a previous response. Pass `nextCursor` here to retrieve the next page of older entries."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AuditLog"
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "nextCursor": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The cursor to pass as `cursor` on the next request to retrieve older entries. Null when `hasMore` is false.",
+                          "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+                        },
+                        "hasMore": {
+                          "type": "boolean",
+                          "description": "True when additional audit log entries exist beyond this page.",
+                          "example": true
+                        }
+                      },
+                      "required": [
+                        "nextCursor",
+                        "hasMore"
+                      ],
+                      "additionalProperties": false,
+                      "description": "The pagination information for the audit log entries.",
+                      "example": {
+                        "nextCursor": "e3977e3e-0b77-4e78-81de-f90e3e37e43c",
+                        "hasMore": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -9319,6 +10315,83 @@
         "description": "The ID that represents a solution capability within the Paramify application.",
         "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
       },
+      "PatchSolutionCapability": {
+        "type": "object",
+        "properties": {
+          "providerValidatorEvidencePairs": {
+            "description": "Replaces the function's MANUAL pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "example": [
+              {
+                "validatorEvidencePairId": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "validatorEvidencePairId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "A uuid that uniquely identifies the validator-evidence pair within Paramify",
+                  "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+                }
+              },
+              "required": [
+                "validatorEvidencePairId"
+              ]
+            }
+          },
+          "integratorValidatorEvidencePairs": {
+            "description": "Replaces the function's MANUAL pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "example": [
+              {
+                "validatorEvidencePairId": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "validatorEvidencePairId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "A uuid that uniquely identifies the validator-evidence pair within Paramify",
+                  "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+                }
+              },
+              "required": [
+                "validatorEvidencePairId"
+              ]
+            }
+          },
+          "endUserValidatorEvidencePairs": {
+            "description": "Replaces the function's MANUAL pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "example": [
+              {
+                "validatorEvidencePairId": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "validatorEvidencePairId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "A uuid that uniquely identifies the validator-evidence pair within Paramify",
+                  "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+                }
+              },
+              "required": [
+                "validatorEvidencePairId"
+              ]
+            }
+          }
+        }
+      },
       "stackId": {
         "type": "string",
         "format": "uuid",
@@ -9484,6 +10557,17 @@
                         }
                       ],
                       "description": "The right-hand side of the criteria comparison. MATCH_COUNT uses the match count, MATCH_GROUP uses a specific capture group, CUSTOM_TEXT uses a literal string."
+                    },
+                    "disposition": {
+                      "default": "PASS",
+                      "description": "The rule result when the criteria comparison is true. One of: PASS, FAIL, ERROR. When the comparison is false, a PASS disposition gives FAIL, and a FAIL or ERROR disposition gives PASS. Defaults to PASS when not provided.",
+                      "example": "PASS",
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "ERROR"
+                      ]
                     }
                   },
                   "required": [
@@ -9502,7 +10586,8 @@
                     "value": {
                       "type": "CUSTOM_TEXT",
                       "customText": "0"
-                    }
+                    },
+                    "disposition": "PASS"
                   }
                 ]
               }
@@ -9687,7 +10772,8 @@
               "value": {
                 "type": "CUSTOM_TEXT",
                 "customText": "0"
-              }
+              },
+              "disposition": "PASS"
             },
             {
               "regexOperation": {
@@ -9698,7 +10784,8 @@
               "value": {
                 "type": "CUSTOM_TEXT",
                 "customText": "0"
-              }
+              },
+              "disposition": "FAIL"
             }
           ]
         },
@@ -9747,7 +10834,8 @@
                 "value": {
                   "type": "CUSTOM_TEXT",
                   "customText": "0"
-                }
+                },
+                "disposition": "PASS"
               }
             ],
             "type": "array",
@@ -9875,6 +10963,17 @@
                     }
                   ],
                   "description": "The right-hand side of the criteria comparison. MATCH_COUNT uses the match count, MATCH_GROUP uses a specific capture group, CUSTOM_TEXT uses a literal string."
+                },
+                "disposition": {
+                  "default": "PASS",
+                  "description": "The rule result when the criteria comparison is true. One of: PASS, FAIL, ERROR. When the comparison is false, a PASS disposition gives FAIL, and a FAIL or ERROR disposition gives PASS. Defaults to PASS when not provided.",
+                  "example": "PASS",
+                  "type": "string",
+                  "enum": [
+                    "PASS",
+                    "FAIL",
+                    "ERROR"
+                  ]
                 }
               },
               "required": [
@@ -10117,7 +11216,8 @@
           "validators",
           "program-requirements",
           "program-controls",
-          "content-records"
+          "content-records",
+          "excuses"
         ],
         "description": "The Paramify entity type that custom tags are associated with.",
         "example": "issues"
@@ -10599,8 +11699,37 @@
             "description": "The original risk level of the issue",
             "example": "HIGH"
           },
+          "numericRiskRating": {
+            "description": "The numeric risk rating of the issue. Null when the issue has no score, which can also happen when originalLevelSource is set but the source published no score for it. How to read it depends on originalLevelSource: NIST_CVSS_4_0 and NIST_CVSS_3_1 ratings are CVSS base scores (0-10), and MECHANISM_RISK_RATING ratings are on the scale the file intake preset configures, so no single scale can be assumed.",
+            "example": 8.1,
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "originalLevelSource": {
+            "description": "The scoring mechanism the numeric risk rating came from, and the scale numericRiskRating is on.",
+            "example": "NIST_CVSS_4_0",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "NIST_CVSS_4_0",
+                  "NIST_CVSS_3_1",
+                  "MECHANISM_RISK_RATING"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "pointOfContact": {
-            "description": "The point of contact for the issue",
+            "description": "The point of contact for the issue, falling back to the issue owner when no point of contact is set",
             "example": {
               "name": "John Doe",
               "email": "john@example.com"
@@ -11306,6 +12435,47 @@
         ],
         "additionalProperties": false
       },
+      "EvidenceValidatorResponse": {
+        "type": "object",
+        "properties": {
+          "validatorEvidencePairId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A UUID that uniquely identifies the pairing of this validator with this evidence.",
+            "example": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A UUID that uniquely identifies this validator within Paramify.",
+            "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name of the validator.",
+            "example": "VAL-1"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "AUTOMATED",
+              "ATTESTATION"
+            ],
+            "description": "Whether the validator is an AUTOMATED or an ATTESTATION validator.",
+            "example": "AUTOMATED"
+          }
+        },
+        "required": [
+          "validatorEvidencePairId",
+          "id",
+          "name",
+          "type"
+        ],
+        "additionalProperties": false,
+        "description": "A validator paired with this evidence"
+      },
       "EvidenceChannelResponse": {
         "type": "object",
         "properties": {
@@ -11940,12 +13110,24 @@
                         }
                       ],
                       "description": "The right-hand side of the criteria comparison. MATCH_COUNT uses the match count, MATCH_GROUP uses a specific capture group, CUSTOM_TEXT uses a literal string."
+                    },
+                    "disposition": {
+                      "default": "PASS",
+                      "description": "The rule result when the criteria comparison is true. One of: PASS, FAIL, ERROR. When the comparison is false, a PASS disposition gives FAIL, and a FAIL or ERROR disposition gives PASS. Defaults to PASS when not provided.",
+                      "example": "PASS",
+                      "type": "string",
+                      "enum": [
+                        "PASS",
+                        "FAIL",
+                        "ERROR"
+                      ]
                     }
                   },
                   "required": [
                     "regexOperation",
                     "criteria",
-                    "value"
+                    "value",
+                    "disposition"
                   ],
                   "additionalProperties": false
                 },
@@ -11959,7 +13141,8 @@
                     "value": {
                       "type": "CUSTOM_TEXT",
                       "customText": "0"
-                    }
+                    },
+                    "disposition": "PASS"
                   }
                 ]
               }
@@ -12159,7 +13342,8 @@
               "value": {
                 "type": "CUSTOM_TEXT",
                 "customText": "0"
-              }
+              },
+              "disposition": "PASS"
             },
             {
               "regexOperation": {
@@ -12170,7 +13354,8 @@
               "value": {
                 "type": "CUSTOM_TEXT",
                 "customText": "0"
-              }
+              },
+              "disposition": "FAIL"
             }
           ]
         },
@@ -12996,6 +14181,431 @@
         ],
         "additionalProperties": false,
         "description": "An object containing a list of pipeline jobs."
+      },
+      "AuditLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A UUID that uniquely identifies this audit log entry within Paramify.",
+            "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "The UTC ISO timestamp when the activity occurred.",
+            "example": "2024-01-15T12:00:00.000Z"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "COMMENT",
+              "HISTORY",
+              "READ",
+              "DOWNLOAD",
+              "AUTHENTICATION"
+            ],
+            "description": "The high-level category of the activity.",
+            "example": "HISTORY"
+          },
+          "actor": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "USER",
+                    "description": "A workspace user."
+                  },
+                  "userId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                    "description": "The UUID of the user who performed the activity.",
+                    "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The display name of the user.",
+                    "example": "Jane Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "The email address of the user.",
+                    "example": "jane.doe@example.com"
+                  },
+                  "workspaceUserType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "COLLABORATOR",
+                          "EDITOR",
+                          "ADMIN",
+                          "ASSESSOR",
+                          "ASSESSMENT_VIEWER",
+                          "VIEWER"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The workspace role of the user, or null when unavailable.",
+                    "example": "EDITOR"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "userId",
+                  "name",
+                  "email",
+                  "workspaceUserType"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "API_KEY",
+                    "description": "An API key."
+                  },
+                  "apiKeyId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                    "description": "The UUID of the API key that performed the activity.",
+                    "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The display name of the API key.",
+                    "example": "CI Pipeline"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "apiKeyId",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "DELETED_USER",
+                    "description": "A removed user."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The last known display name of the user.",
+                    "example": "Jane Doe"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "AUTOMATED",
+                    "description": "An automated system actor."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The display name of the automated actor.",
+                    "example": "Paramify"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "description": "The actor that performed the activity.",
+            "type": "object"
+          },
+          "resource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "EXCUSE",
+                  "ARTIFACT_REQUEST",
+                  "PROGRAM_INFORMATION_TYPE",
+                  "PROGRAM_CONTROL",
+                  "PROGRAM_REQUIREMENT",
+                  "PROGRAM_REQUIREMENT_ASSESSMENT",
+                  "PROGRAM_SECURITY_OBJECTIVE",
+                  "PROGRAM_PRIVACY",
+                  "PROGRAM_OVERVIEW",
+                  "PROGRAM_SETTING",
+                  "PROGRAM_USER_COUNT",
+                  "PROGRAM_INTERCONNECTIONS",
+                  "ELEMENT",
+                  "ELEMENT_COMPONENT",
+                  "ELEMENT_PARTY",
+                  "ELEMENT_ROLE",
+                  "ELEMENT_LOCATION",
+                  "ELEMENT_DATA",
+                  "INVENTORY_ITEM",
+                  "SOLUTION_CAPABILITY",
+                  "TEMPLATE_SOLUTION",
+                  "COLLECTION",
+                  "PROGRAM",
+                  "ATTACHMENT",
+                  "TERM",
+                  "CONTACT",
+                  "USER",
+                  "WORKSPACE",
+                  "IMPORT",
+                  "ISSUE",
+                  "TASK",
+                  "ASSESSMENT",
+                  "ASSESSMENT_CYCLE",
+                  "EVIDENCE",
+                  "TEMPLATE_SOLUTION_NARRATIVE",
+                  "PROFILE",
+                  "PROFILE_RISK_SOLUTION",
+                  "COMPLIANCE_PROFILE",
+                  "VALIDATOR",
+                  "SCRIPT",
+                  "VALIDATION_RULE",
+                  "CONTENT_RECORD",
+                  "CATALOG_CONTROL",
+                  "PROFILE_CONTROL",
+                  "PROGRAM_TYPE",
+                  "CATALOG",
+                  "FILE_INTAKE_PRESET",
+                  "MASTER_DATA_PUBLISHING",
+                  "CHANNEL",
+                  "AI_SKILL",
+                  "INVENTORY",
+                  "CONTROL_PARAMETER_PRESET",
+                  "IDENTIFIER_SETTING",
+                  "AI_FEATURES",
+                  "RISK",
+                  "STACK",
+                  "ISSUE_TRACKER_INTEGRATION",
+                  "TEAM",
+                  "SLACK_INTEGRATION",
+                  "DEVIATION",
+                  "RECOMMENDATION",
+                  "MILESTONE",
+                  "PIPELINE_JOB",
+                  "ARTIFACT",
+                  "CUSTOM_TAG",
+                  "AUDIT_ASSESSMENT"
+                ],
+                "description": "The type of entity the activity targeted.",
+                "example": "ISSUE"
+              },
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The UUID of the targeted entity, or null when the target has no specific id.",
+                "example": "b144e4d8-5c1b-5515-a242-00856705e2eb"
+              }
+            },
+            "required": [
+              "type",
+              "id"
+            ],
+            "additionalProperties": false,
+            "description": "The entity the activity was performed on."
+          },
+          "action": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "verb": {
+                    "type": "string",
+                    "const": "COMMENT",
+                    "description": "A comment was added."
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "The comment text.",
+                    "example": "Updated the remediation plan."
+                  }
+                },
+                "required": [
+                  "verb",
+                  "text"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "verb": {
+                    "type": "string",
+                    "const": "LOGIN",
+                    "description": "The user logged into the workspace.",
+                    "example": "LOGIN"
+                  }
+                },
+                "required": [
+                  "verb"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "verb": {
+                    "type": "string",
+                    "enum": [
+                      "READ",
+                      "DOWNLOAD"
+                    ],
+                    "description": "A read or download activity.",
+                    "example": "READ"
+                  },
+                  "page": {
+                    "type": "string",
+                    "description": "The page or resource that was accessed.",
+                    "example": "ISSUE_DETAIL"
+                  }
+                },
+                "required": [
+                  "verb",
+                  "page"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "verb": {
+                    "type": "string",
+                    "enum": [
+                      "CREATE",
+                      "UPDATE",
+                      "DELETE",
+                      "ADD",
+                      "REMOVE",
+                      "IMPORT",
+                      "REPLY",
+                      "AUTOMATED",
+                      "PUBLISH"
+                    ],
+                    "description": "A create, update, or other history activity.",
+                    "example": "UPDATE"
+                  },
+                  "changes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "old": {
+                          "description": "The previous value before the change, when one existed.",
+                          "example": "Open"
+                        },
+                        "new": {
+                          "description": "The value after the change.",
+                          "example": "Closed"
+                        }
+                      },
+                      "required": [
+                        "new"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "The field-level changes recorded for this activity.",
+                    "example": [
+                      {
+                        "old": "Open",
+                        "new": "Closed"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "verb",
+                  "changes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "verb": {
+                    "type": "string",
+                    "const": "UNKNOWN",
+                    "description": "The activity could not be interpreted.",
+                    "example": "UNKNOWN"
+                  }
+                },
+                "required": [
+                  "verb"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "description": "What the actor did to the resource.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "timestamp",
+          "type",
+          "actor",
+          "resource",
+          "action"
+        ],
+        "additionalProperties": false,
+        "example": {
+          "id": "e3977e3e-0b77-4e78-81de-f90e3e37e43c",
+          "timestamp": "2024-01-15T12:00:00.000Z",
+          "type": "HISTORY",
+          "actor": {
+            "kind": "USER",
+            "userId": "a033d3c7-4b0a-4404-9131-99745694c1da",
+            "name": "Jane Doe",
+            "email": "jane.doe@example.com",
+            "workspaceUserType": "EDITOR"
+          },
+          "resource": {
+            "type": "ISSUE",
+            "id": "b144e4d8-5c1b-5515-a242-00856705e2eb"
+          },
+          "action": {
+            "verb": "UPDATE",
+            "changes": [
+              {
+                "old": "Open",
+                "new": "Closed"
+              }
+            ]
+          }
+        }
       }
     },
     "responses": {
