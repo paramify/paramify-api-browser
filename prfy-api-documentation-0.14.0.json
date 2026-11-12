@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Paramify REST API Documentation",
-    "version": "0.10.0",
+    "version": "0.14.0",
     "description": "This is the REST API documentation for the Paramify application."
   },
   "servers": [
@@ -241,7 +241,7 @@
         ],
         "operationId": "getIssues",
         "summary": "Get issues within a project filterable by query parameters.",
-        "description": "Gets all issues within the project specified by the query parameter `projectId`, and optionally filtered by various parameters.\n\n**Basic Filtering:**\n- **Multiple IDs**: Pass several `id` values to retrieve multiple issues at once\n- **POAM IDs**: Pass several `poamId` values to retrieve multiple issues (requires `projectId`)\n\n**Content Filtering:**\n- **`deviationType`**: Retrieve issues containing deviations of the specified type\n- **`title`**: Retrieve issues whose title contains the provided string (case-insensitive)\n- **`kev`**: Retrieve issues containing CVE IDs present in the Known Exploited Vulnerabilities (KEV) catalog\n- **`cveId`**: Retrieve issues containing the specified CVE identifier (OR logic for multiple CVE IDs)\n- **`asset`**: Retrieve issues with at least one of the provided asset names (case-sensitive, exact match)\n- **`internetReachableVulnerability`**: Filter issues by whether they represent an internet-reachable vulnerability (boolean)\n- **`likelyExploitableVulnerability`**: Filter issues by whether they represent a likely-exploitable vulnerability (boolean)\n\n**Date Range Filtering:**\n\nDate ranges are inclusive. You may provide one side of the date range to get an unbounded range. Date format for all filters: YYYY-MM-DD (e.g., \"2024-01-01\")\n- **Effective Date**: Use `effectiveDateStart` and `effectiveDateEnd` (filters the `createdAt` field returned by the API)\n- **Due Date**: Use `dueDateStart` and `dueDateEnd`\n- **Status Date**: Use `statusDateStart` and `statusDateEnd`\n- **Evaluation Date**: Use `evaluationDateStart` and `evaluationDateEnd`",
+        "description": "Gets all issues within the project specified by the query parameter `projectId`, and optionally filtered by various parameters.\n\n**Basic Filtering:**\n- **Multiple IDs**: Pass several `id` values to retrieve multiple issues at once\n- **POAM IDs**: Pass several `poamId` values to retrieve multiple issues (requires `projectId`)\n\n**Content Filtering:**\n- **`deviationType`**: Retrieve issues containing deviations of the specified type\n- **`title`**: Retrieve issues whose title contains the provided string (case-insensitive)\n- **`kev`**: Retrieve issues containing CVE IDs present in the Known Exploited Vulnerabilities (KEV) catalog\n- **`cveId`**: Retrieve issues containing the specified CVE identifier (OR logic for multiple CVE IDs)\n- **`asset`**: Retrieve issues with at least one of the provided asset names (case-sensitive, exact match)\n- **`internetReachableVulnerability`**: Filter issues by whether they represent an internet-reachable vulnerability\n- **`likelyExploitableVulnerability`**: Filter issues by whether they represent a likely-exploitable vulnerability\n- **`painRating`**: Retrieve issues with any of the specified PAIN ratings, using `NOT_SET` for issues without one (OR logic for multiple PAIN ratings)\n- **`status`**: Retrieve issues with any of the specified statuses: `OPEN`, `ACCEPTED` or `CLOSED` (OR logic for multiple statuses)\n- **`vdrAcceptedVulnerability`**: Filter issues by whether they are a VDR: Accepted Vulnerability, meaning the issue is `ACCEPTED` only through approved `ACCEPTED_VULNERABILITY` deviations (boolean)\n\n**Date Range Filtering:**\n\nDate ranges are inclusive. You may provide one side of the date range to get an unbounded range. Date format for all filters: YYYY-MM-DD (e.g., \"2024-01-01\")\n- **Effective Date**: Use `effectiveDateStart` and `effectiveDateEnd` (filters the `createdAt` field returned by the API)\n- **Due Date**: Use `dueDateStart` and `dueDateEnd`\n- **Status Date**: Use `statusDateStart` and `statusDateEnd`\n- **Evaluation Date**: Use `evaluationDateStart` and `evaluationDateEnd`",
         "parameters": [
           {
             "in": "query",
@@ -373,7 +373,15 @@
             "name": "internetReachableVulnerability",
             "schema": {
               "description": "Filter issues by whether they represent an internet-reachable vulnerability",
-              "type": "boolean"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "const": "NOT_SET"
+                }
+              ]
             },
             "description": "Filter issues by whether they represent an internet-reachable vulnerability"
           },
@@ -382,9 +390,42 @@
             "name": "likelyExploitableVulnerability",
             "schema": {
               "description": "Filter issues by whether they represent a likely-exploitable vulnerability",
-              "type": "boolean"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "const": "NOT_SET"
+                }
+              ]
             },
             "description": "Filter issues by whether they represent a likely-exploitable vulnerability"
+          },
+          {
+            "in": "query",
+            "name": "painRating",
+            "schema": {
+              "$ref": "#/components/schemas/painRatings"
+            },
+            "description": "A PAIN rating, or NOT_SET for issues without a PAIN rating. Can be passed multiple times to filter by multiple PAIN ratings."
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "$ref": "#/components/schemas/issueStatuses"
+            },
+            "description": "An issue status. Can be passed multiple times to filter by multiple statuses (OR logic)."
+          },
+          {
+            "in": "query",
+            "name": "vdrAcceptedVulnerability",
+            "schema": {
+              "description": "Filter issues by whether they are a VDR: Accepted Vulnerability. An issue is one when it is ACCEPTED only through approved ACCEPTED_VULNERABILITY deviations.",
+              "type": "boolean"
+            },
+            "description": "Filter issues by whether they are a VDR: Accepted Vulnerability. An issue is one when it is ACCEPTED only through approved ACCEPTED_VULNERABILITY deviations."
           },
           {
             "in": "query",
@@ -519,13 +560,9 @@
                   "numericRiskRating": {
                     "description": "The numeric risk rating of the issue. Send it on the scale implied by the originalLevelSource you set; the two are not cross-validated. A later processing run that rescores this issue overwrites both.",
                     "example": 8.1,
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "number",
+                      "null"
                     ]
                   },
                   "originalLevelSource": {
@@ -537,7 +574,28 @@
                         "enum": [
                           "NIST_CVSS_4_0",
                           "NIST_CVSS_3_1",
+                          "NIST_CVSS_2_0",
                           "MECHANISM_RISK_RATING"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "painRating": {
+                    "description": "The PAIN rating of the issue. Omit to calculate from the risk level, or send null to leave it not set.",
+                    "example": "N2",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "N0",
+                          "N1",
+                          "N2",
+                          "N3",
+                          "N4",
+                          "N5"
                         ]
                       },
                       {
@@ -563,7 +621,7 @@
                           "email": {
                             "type": "string",
                             "format": "email",
-                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                           }
                         },
                         "required": [
@@ -579,13 +637,9 @@
                   "pluginId": {
                     "description": "The plugin id associated with the issue",
                     "example": "plugin-123",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "cveIds": {
@@ -641,14 +695,15 @@
                     ]
                   },
                   "status": {
-                    "description": "The current status of the issue",
+                    "description": "The issue's status. `ACCEPTED` requires an approved `FALSE_POSITIVE`, `OPERATIONAL_REQUIREMENT` or `ACCEPTED_VULNERABILITY` deviation, and `OPEN` becomes `ACCEPTED` when the issue has one.",
                     "example": "OPEN",
                     "anyOf": [
                       {
                         "type": "string",
                         "enum": [
                           "OPEN",
-                          "CLOSED"
+                          "CLOSED",
+                          "ACCEPTED"
                         ]
                       },
                       {
@@ -695,6 +750,9 @@
                               "COM_SERVICE",
                               "COM_SOFTWARE",
                               "COM_SUBNET",
+                              "COM_SYSTEM",
+                              "COM_USER_CONFIGURED",
+                              "COM_USER_PROVIDED",
                               "PAR_ORGANIZATION",
                               "PAR_PERSON"
                             ]
@@ -769,49 +827,33 @@
                   "dueDate": {
                     "description": "The date the issue is due",
                     "example": "2022-01-01T00:00:00.000Z",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "description": {
                     "description": "Text describing the issue",
                     "example": "This is a detailed description of the issue.",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "remarks": {
                     "description": "Additional remarks or notes about the issue",
                     "example": "This issue requires immediate attention due to security implications.",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "remediationDescription": {
                     "description": "Description of the remediation for the issue",
                     "example": "This is a detailed description of the remediation.",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "type": {
@@ -821,33 +863,38 @@
                   "createdAt": {
                     "description": "The date the issue was created. If not provided, the current date will be used.",
                     "example": "2005-05-19T00:00:00.000Z",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "internetReachableVulnerability": {
                     "description": "Whether the issue represents an internet-reachable vulnerability.",
                     "example": false,
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "boolean",
+                      "null"
                     ]
                   },
                   "likelyExploitableVulnerability": {
                     "description": "Whether the issue represents a likely-exploitable vulnerability.",
                     "example": false,
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "forensicTriageStatus": {
+                    "description": "The issue's Required Forensic Triage status. Rejected unless one of the issue's CVE IDs requires forensic triage in the KEV catalog.",
+                    "example": "IN_PROGRESS",
                     "anyOf": [
                       {
-                        "type": "boolean"
+                        "type": "string",
+                        "enum": [
+                          "NOT_COMPLETE",
+                          "IN_PROGRESS",
+                          "COMPLETED"
+                        ]
                       },
                       {
                         "type": "null"
@@ -857,13 +904,9 @@
                   "evaluationDate": {
                     "description": "The evaluation date for the issue. If not provided, it will default to the issue's effective date.",
                     "example": "2022-01-01T00:00:00.000Z",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "deviations": {
@@ -875,6 +918,7 @@
                         "type": "VENDOR_DEPENDENCY",
                         "createdAt": "2022-01-01T00:00:00Z",
                         "deviationMetadata": {
+                          "name": "Vendor patch pending",
                           "status": "PENDING",
                           "adjustedLevel": "MODERATE",
                           "acceptanceStatusDate": "2022-01-01T00:00:00.000Z"
@@ -906,18 +950,21 @@
                             "createdAt": {
                               "description": "The date the deviation was created",
                               "example": "2022-01-01T00:00:00.000Z",
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
+                              "type": [
+                                "string",
+                                "null"
                               ]
                             },
                             "deviationMetadata": {
                               "type": "object",
                               "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 255,
+                                  "description": "The name of the deviation",
+                                  "example": "Vendor patch pending"
+                                },
                                 "status": {
                                   "type": "string",
                                   "enum": [
@@ -940,17 +987,14 @@
                                 "acceptanceStatusDate": {
                                   "description": "The date the deviation status was accepted or rejected",
                                   "example": "2022-01-01T00:00:00.000Z",
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
+                                  "type": [
+                                    "string",
+                                    "null"
                                   ]
                                 }
                               },
                               "required": [
+                                "name",
                                 "status"
                               ],
                               "description": "Deviation schema"
@@ -1031,6 +1075,9 @@
                                           "COM_SERVICE",
                                           "COM_SOFTWARE",
                                           "COM_SUBNET",
+                                          "COM_SYSTEM",
+                                          "COM_USER_CONFIGURED",
+                                          "COM_USER_PROVIDED",
                                           "PAR_ORGANIZATION",
                                           "PAR_PERSON"
                                         ]
@@ -1269,13 +1316,9 @@
                   "numericRiskRating": {
                     "description": "The numeric risk rating of the issue. Send it on the scale implied by the originalLevelSource you set; the two are not cross-validated. A later processing run that rescores this issue overwrites both.",
                     "example": 8.1,
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "number",
+                      "null"
                     ]
                   },
                   "originalLevelSource": {
@@ -1287,7 +1330,28 @@
                         "enum": [
                           "NIST_CVSS_4_0",
                           "NIST_CVSS_3_1",
+                          "NIST_CVSS_2_0",
                           "MECHANISM_RISK_RATING"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "painRating": {
+                    "description": "The PAIN rating of the issue. Pass `null` to clear the PAIN rating; omit to leave it unchanged.",
+                    "example": "N2",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "N0",
+                          "N1",
+                          "N2",
+                          "N3",
+                          "N4",
+                          "N5"
                         ]
                       },
                       {
@@ -1313,7 +1377,7 @@
                           "email": {
                             "type": "string",
                             "format": "email",
-                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                           }
                         },
                         "required": [
@@ -1377,12 +1441,13 @@
                     }
                   },
                   "status": {
-                    "description": "The current status of the issue",
+                    "description": "The issue's status. `ACCEPTED` requires an approved `FALSE_POSITIVE`, `OPERATIONAL_REQUIREMENT` or `ACCEPTED_VULNERABILITY` deviation, and `OPEN` becomes `ACCEPTED` when the issue has one.",
                     "example": "OPEN",
                     "type": "string",
                     "enum": [
                       "OPEN",
-                      "CLOSED"
+                      "CLOSED",
+                      "ACCEPTED"
                     ]
                   },
                   "statusDate": {
@@ -1424,6 +1489,9 @@
                               "COM_SERVICE",
                               "COM_SOFTWARE",
                               "COM_SUBNET",
+                              "COM_SYSTEM",
+                              "COM_USER_CONFIGURED",
+                              "COM_USER_PROVIDED",
                               "PAR_ORGANIZATION",
                               "PAR_PERSON"
                             ]
@@ -1484,13 +1552,9 @@
                   "dueDate": {
                     "description": "The date the issue is due",
                     "example": "2022-01-01T00:00:00.000Z",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "description": {
@@ -1520,12 +1584,28 @@
                   "internetReachableVulnerability": {
                     "description": "Whether the issue represents an internet-reachable vulnerability.",
                     "example": false,
-                    "type": "boolean"
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
                   },
                   "likelyExploitableVulnerability": {
                     "description": "Whether the issue represents a likely-exploitable vulnerability.",
                     "example": false,
-                    "type": "boolean"
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "forensicTriageStatus": {
+                    "description": "The issue's Required Forensic Triage status. Rejected unless one of the issue's CVE IDs requires forensic triage in the KEV catalog.",
+                    "example": "IN_PROGRESS",
+                    "type": "string",
+                    "enum": [
+                      "NOT_COMPLETE",
+                      "IN_PROGRESS",
+                      "COMPLETED"
+                    ]
                   },
                   "evaluationDate": {
                     "description": "The evaluation date for the issue.",
@@ -1542,6 +1622,7 @@
                         "type": "VENDOR_DEPENDENCY",
                         "createdAt": "2022-01-01T00:00:00Z",
                         "deviationMetadata": {
+                          "name": "Vendor patch pending",
                           "status": "PENDING",
                           "adjustedLevel": "MODERATE",
                           "acceptanceStatusDate": "2022-01-01T00:00:00.000Z"
@@ -1650,6 +1731,9 @@
                                   "COM_SERVICE",
                                   "COM_SOFTWARE",
                                   "COM_SUBNET",
+                                  "COM_SYSTEM",
+                                  "COM_USER_CONFIGURED",
+                                  "COM_USER_PROVIDED",
                                   "PAR_ORGANIZATION",
                                   "PAR_PERSON"
                                 ]
@@ -1682,38 +1766,78 @@
                     ],
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "description": "A uuid that uniquely identifies the milestone",
-                          "example": "123e4567-e89b-12d3-a456-426614174000",
-                          "type": "string",
-                          "format": "uuid",
-                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                              "description": "A uuid that uniquely identifies the milestone",
+                              "example": "123e4567-e89b-12d3-a456-426614174000"
+                            },
+                            "title": {
+                              "description": "The title of the milestone",
+                              "example": "Task Title Example",
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "description": {
+                              "description": "The description of the milestone",
+                              "example": "This is a detailed description of the milestone.",
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "dueEnd": {
+                              "description": "The date the milestone is due to be completed",
+                              "example": "2025-01-01T00:00:00.000Z",
+                              "type": "string"
+                            },
+                            "dueStart": {
+                              "description": "The date progress on the milestone should start",
+                              "example": "2024-12-01T00:00:00.000Z",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id"
+                          ]
                         },
-                        "title": {
-                          "description": "The title of the milestone",
-                          "example": "Task Title Example",
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "description": {
-                          "description": "The description of the milestone",
-                          "example": "This is a detailed description of the milestone.",
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "dueEnd": {
-                          "description": "The date the milestone is due to be completed",
-                          "example": "2025-01-01T00:00:00.000Z",
-                          "type": "string"
-                        },
-                        "dueStart": {
-                          "description": "The date progress on the milestone should start",
-                          "example": "2024-12-01T00:00:00.000Z",
-                          "type": "string"
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "not": {}
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "The title of the milestone",
+                              "example": "Task Title Example"
+                            },
+                            "description": {
+                              "description": "The description of the milestone",
+                              "example": "This is a detailed description of the milestone.",
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "dueEnd": {
+                              "description": "The date the milestone is due to be completed",
+                              "example": "2025-01-01T00:00:00.000Z",
+                              "type": "string"
+                            },
+                            "dueStart": {
+                              "description": "The date progress on the milestone should start",
+                              "example": "2024-12-01T00:00:00.000Z",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "title"
+                          ]
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -1782,6 +1906,91 @@
         "responses": {
           "200": {
             "description": "200 Ok"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/issues/{issueId}/deviations/associate": {
+      "post": {
+        "tags": [
+          "Issues"
+        ],
+        "operationId": "postIssueDeviationsAssociate",
+        "summary": "Associate or dissociate deviations with the specified issue",
+        "description": "Associates or dissociates the deviations specified by `deviationIds` with the issue specified by the `issueId` path parameter. Use the `associationType` field to choose between `ASSOCIATE` and `DISSOCIATE`. Associating a deviation that is already associated, or dissociating one that is not, has no effect.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "issueId",
+            "schema": {
+              "$ref": "#/components/schemas/issueId"
+            },
+            "required": true,
+            "description": "An id that represents an issue within the Paramify application."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviationIds": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "description": "The IDs of the deviations to associate with or dissociate from the issue.",
+                    "example": [
+                      "123e4567-e89b-12d3-a456-426614174000"
+                    ]
+                  },
+                  "associationType": {
+                    "type": "string",
+                    "enum": [
+                      "ASSOCIATE",
+                      "DISSOCIATE"
+                    ],
+                    "description": "Whether the provided records should be associated with or dissociated from the target record.",
+                    "example": "ASSOCIATE"
+                  }
+                },
+                "required": [
+                  "deviationIds",
+                  "associationType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "204 No Content"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -2011,6 +2220,9 @@
                                 "COM_SERVICE",
                                 "COM_SOFTWARE",
                                 "COM_SUBNET",
+                                "COM_SYSTEM",
+                                "COM_USER_CONFIGURED",
+                                "COM_USER_PROVIDED",
                                 "PAR_ORGANIZATION",
                                 "PAR_PERSON"
                               ]
@@ -2229,6 +2441,9 @@
                             "COM_SERVICE",
                             "COM_SOFTWARE",
                             "COM_SUBNET",
+                            "COM_SYSTEM",
+                            "COM_USER_CONFIGURED",
+                            "COM_USER_PROVIDED",
                             "PAR_ORGANIZATION",
                             "PAR_PERSON"
                           ]
@@ -2475,18 +2690,21 @@
                   "createdAt": {
                     "description": "The date the deviation was created",
                     "example": "2022-01-01T00:00:00.000Z",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "deviationMetadata": {
                     "type": "object",
                     "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "description": "The name of the deviation",
+                        "example": "Vendor patch pending"
+                      },
                       "status": {
                         "type": "string",
                         "enum": [
@@ -2509,17 +2727,14 @@
                       "acceptanceStatusDate": {
                         "description": "The date the deviation status was accepted or rejected",
                         "example": "2022-01-01T00:00:00.000Z",
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "null"
-                          }
+                        "type": [
+                          "string",
+                          "null"
                         ]
                       }
                     },
                     "required": [
+                      "name",
                       "status"
                     ],
                     "description": "Deviation schema"
@@ -2550,6 +2765,91 @@
                 "$ref": "#/components/links/postDeviation"
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/deviations/{deviationId}/issues/associate": {
+      "post": {
+        "tags": [
+          "Deviations (\"Excuses\" in the Paramify application)"
+        ],
+        "operationId": "postDeviationIssuesAssociate",
+        "summary": "Associate or dissociate issues with the specified deviation",
+        "description": "Associates or dissociates the issues specified by `issueIds` with the deviation specified by the `deviationId` path parameter. Use the `associationType` field to choose between `ASSOCIATE` and `DISSOCIATE`. Associating an issue that is already associated, or dissociating one that is not, has no effect.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deviationId",
+            "schema": {
+              "$ref": "#/components/schemas/deviationId"
+            },
+            "required": true,
+            "description": "An id that represents a deviation (\"Excuse\") within the Paramify application."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "issueIds": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "description": "The IDs of the issues to associate with or dissociate from the deviation.",
+                    "example": [
+                      "123e4567-e89b-12d3-a456-426614174000"
+                    ]
+                  },
+                  "associationType": {
+                    "type": "string",
+                    "enum": [
+                      "ASSOCIATE",
+                      "DISSOCIATE"
+                    ],
+                    "description": "Whether the provided records should be associated with or dissociated from the target record.",
+                    "example": "ASSOCIATE"
+                  }
+                },
+                "required": [
+                  "issueIds",
+                  "associationType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "204 No Content"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -2871,28 +3171,20 @@
                             "example": "This is a detailed description of the milestone."
                           },
                           "dueStart": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The start date of the milestone",
-                            "example": "2022-01-01T00:00:00.000Z"
+                            "example": "2022-01-01T00:00:00.000Z",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "dueEnd": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The end date of the milestone",
-                            "example": "2022-01-01T00:00:00.000Z"
+                            "example": "2022-01-01T00:00:00.000Z",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -2996,28 +3288,20 @@
                       "example": "This is a detailed description of the milestone."
                     },
                     "dueStart": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The start date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "dueEnd": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The end date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -3115,28 +3399,20 @@
                       "example": "This is a detailed description of the milestone."
                     },
                     "dueStart": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The start date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "dueEnd": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The end date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -3273,28 +3549,20 @@
                       "example": "This is a detailed description of the milestone."
                     },
                     "dueStart": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The start date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "dueEnd": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The end date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -3473,16 +3741,12 @@
                             "example": "123e4567-e89b-12d3-a456-426614174000"
                           },
                           "referenceId": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "Human-readable reference identifier (e.g., \"EVD-001\")",
-                            "example": "EVD-001"
+                            "example": "EVD-001",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "name": {
                             "type": "string",
@@ -3553,6 +3817,26 @@
                               }
                             ]
                           },
+                          "whenToApproveArtifactRequest": {
+                            "type": "string",
+                            "enum": [
+                              "MANUAL",
+                              "SUBMISSION_WITH_PASSING_VALIDATORS",
+                              "SUBMISSION"
+                            ],
+                            "description": "When a batch on this evidence is approved. Each new batch copies this setting when it is created. Defaults to SUBMISSION. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+                            "example": "SUBMISSION"
+                          },
+                          "whenToCreateAndUpdateProcessArtifactRequest": {
+                            "type": "string",
+                            "enum": [
+                              "UPON_UPLOAD",
+                              "MANUAL",
+                              "APPROVAL"
+                            ],
+                            "description": "When Create & Update Processing runs on artifacts of a batch on this evidence. Each new batch copies this setting when it is created. Defaults to MANUAL. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+                            "example": "MANUAL"
+                          },
                           "channels": {
                             "type": "array",
                             "items": {
@@ -3568,6 +3852,8 @@
                           "validators",
                           "artifactCount",
                           "frequency",
+                          "whenToApproveArtifactRequest",
+                          "whenToCreateAndUpdateProcessArtifactRequest",
                           "channels"
                         ],
                         "additionalProperties": false
@@ -3627,13 +3913,9 @@
                   "referenceId": {
                     "description": "A custom reference identifier for the evidence. Must be unique. If not provided, a system-generated ID will be used.",
                     "example": "EVD-1",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "name": {
@@ -3644,37 +3926,25 @@
                   "description": {
                     "description": "A detailed description of the evidence",
                     "example": "Example description",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "instructions": {
                     "description": "Instructions for how to use or interpret this evidence",
                     "example": "Example instructions",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "remarks": {
                     "description": "Additional remarks or notes about the evidence",
                     "example": "Example remarks",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "frequency": {
@@ -3706,6 +3976,26 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "whenToApproveArtifactRequest": {
+                    "description": "When a batch on this evidence is approved. Each new batch copies this setting when it is created. Defaults to SUBMISSION. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+                    "example": "SUBMISSION",
+                    "type": "string",
+                    "enum": [
+                      "MANUAL",
+                      "SUBMISSION_WITH_PASSING_VALIDATORS",
+                      "SUBMISSION"
+                    ]
+                  },
+                  "whenToCreateAndUpdateProcessArtifactRequest": {
+                    "description": "When Create & Update Processing runs on artifacts of a batch on this evidence. Each new batch copies this setting when it is created. Defaults to MANUAL. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+                    "example": "MANUAL",
+                    "type": "string",
+                    "enum": [
+                      "UPON_UPLOAD",
+                      "MANUAL",
+                      "APPROVAL"
+                    ]
                   }
                 },
                 "required": [
@@ -3729,16 +4019,12 @@
                       "example": "123e4567-e89b-12d3-a456-426614174000"
                     },
                     "referenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "Human-readable reference identifier (e.g., \"EVD-001\")",
-                      "example": "EVD-001"
+                      "example": "EVD-001",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "name": {
                       "type": "string",
@@ -3809,6 +4095,26 @@
                         }
                       ]
                     },
+                    "whenToApproveArtifactRequest": {
+                      "type": "string",
+                      "enum": [
+                        "MANUAL",
+                        "SUBMISSION_WITH_PASSING_VALIDATORS",
+                        "SUBMISSION"
+                      ],
+                      "description": "When a batch on this evidence is approved. Each new batch copies this setting when it is created. Defaults to SUBMISSION. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+                      "example": "SUBMISSION"
+                    },
+                    "whenToCreateAndUpdateProcessArtifactRequest": {
+                      "type": "string",
+                      "enum": [
+                        "UPON_UPLOAD",
+                        "MANUAL",
+                        "APPROVAL"
+                      ],
+                      "description": "When Create & Update Processing runs on artifacts of a batch on this evidence. Each new batch copies this setting when it is created. Defaults to MANUAL. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+                      "example": "MANUAL"
+                    },
                     "channels": {
                       "type": "array",
                       "items": {
@@ -3824,6 +4130,8 @@
                     "validators",
                     "artifactCount",
                     "frequency",
+                    "whenToApproveArtifactRequest",
+                    "whenToCreateAndUpdateProcessArtifactRequest",
                     "channels"
                   ],
                   "additionalProperties": false
@@ -3893,16 +4201,12 @@
                       "example": "123e4567-e89b-12d3-a456-426614174000"
                     },
                     "referenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "Human-readable reference identifier (e.g., \"EVD-001\")",
-                      "example": "EVD-001"
+                      "example": "EVD-001",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "name": {
                       "type": "string",
@@ -3973,6 +4277,26 @@
                         }
                       ]
                     },
+                    "whenToApproveArtifactRequest": {
+                      "type": "string",
+                      "enum": [
+                        "MANUAL",
+                        "SUBMISSION_WITH_PASSING_VALIDATORS",
+                        "SUBMISSION"
+                      ],
+                      "description": "When a batch on this evidence is approved. Each new batch copies this setting when it is created. Defaults to SUBMISSION. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+                      "example": "SUBMISSION"
+                    },
+                    "whenToCreateAndUpdateProcessArtifactRequest": {
+                      "type": "string",
+                      "enum": [
+                        "UPON_UPLOAD",
+                        "MANUAL",
+                        "APPROVAL"
+                      ],
+                      "description": "When Create & Update Processing runs on artifacts of a batch on this evidence. Each new batch copies this setting when it is created. Defaults to MANUAL. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+                      "example": "MANUAL"
+                    },
                     "channels": {
                       "type": "array",
                       "items": {
@@ -3988,6 +4312,8 @@
                     "validators",
                     "artifactCount",
                     "frequency",
+                    "whenToApproveArtifactRequest",
+                    "whenToCreateAndUpdateProcessArtifactRequest",
                     "channels"
                   ],
                   "additionalProperties": false,
@@ -4050,16 +4376,12 @@
                 "type": "object",
                 "properties": {
                   "referenceId": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
                     "description": "The reference id of the evidence",
-                    "example": "EVD-1"
+                    "example": "EVD-1",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "name": {
                     "description": "The name or title of the evidence",
@@ -4110,6 +4432,26 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "whenToApproveArtifactRequest": {
+                    "description": "When a batch on this evidence is approved. Each new batch copies this setting when it is created. Defaults to SUBMISSION. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+                    "example": "SUBMISSION",
+                    "type": "string",
+                    "enum": [
+                      "MANUAL",
+                      "SUBMISSION_WITH_PASSING_VALIDATORS",
+                      "SUBMISSION"
+                    ]
+                  },
+                  "whenToCreateAndUpdateProcessArtifactRequest": {
+                    "description": "When Create & Update Processing runs on artifacts of a batch on this evidence. Each new batch copies this setting when it is created. Defaults to MANUAL. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+                    "example": "MANUAL",
+                    "type": "string",
+                    "enum": [
+                      "UPON_UPLOAD",
+                      "MANUAL",
+                      "APPROVAL"
+                    ]
                   }
                 }
               }
@@ -4130,16 +4472,12 @@
                       "example": "123e4567-e89b-12d3-a456-426614174000"
                     },
                     "referenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "Human-readable reference identifier (e.g., \"EVD-001\")",
-                      "example": "EVD-001"
+                      "example": "EVD-001",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "name": {
                       "type": "string",
@@ -4210,6 +4548,26 @@
                         }
                       ]
                     },
+                    "whenToApproveArtifactRequest": {
+                      "type": "string",
+                      "enum": [
+                        "MANUAL",
+                        "SUBMISSION_WITH_PASSING_VALIDATORS",
+                        "SUBMISSION"
+                      ],
+                      "description": "When a batch on this evidence is approved. Each new batch copies this setting when it is created. Defaults to SUBMISSION. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+                      "example": "SUBMISSION"
+                    },
+                    "whenToCreateAndUpdateProcessArtifactRequest": {
+                      "type": "string",
+                      "enum": [
+                        "UPON_UPLOAD",
+                        "MANUAL",
+                        "APPROVAL"
+                      ],
+                      "description": "When Create & Update Processing runs on artifacts of a batch on this evidence. Each new batch copies this setting when it is created. Defaults to MANUAL. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+                      "example": "MANUAL"
+                    },
                     "channels": {
                       "type": "array",
                       "items": {
@@ -4225,6 +4583,8 @@
                     "validators",
                     "artifactCount",
                     "frequency",
+                    "whenToApproveArtifactRequest",
+                    "whenToCreateAndUpdateProcessArtifactRequest",
                     "channels"
                   ],
                   "additionalProperties": false,
@@ -4489,6 +4849,18 @@
               "type": "boolean"
             },
             "description": "Filter artifacts by type - whether they are URL references (true) or uploaded files (false). Use true to get only URL artifacts, false to get only file uploads."
+          },
+          {
+            "in": "query",
+            "name": "batchId",
+            "schema": {
+              "description": "Filter artifacts to those uploaded to the batch with this id.",
+              "example": "0b2f6c1e-8d4a-4f7b-9c3e-5a1d2e3f4a5b",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": "Filter artifacts to those uploaded to the batch with this id."
           }
         ],
         "responses": {
@@ -4664,13 +5036,9 @@
                   "title": {
                     "description": "A descriptive title for the URL artifact. If not provided, the URL domain will be used as the title.",
                     "example": "Company Security Policy Documentation",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "pathName": {
@@ -4681,26 +5049,18 @@
                   "note": {
                     "description": "Additional notes or comments about the URL artifact. Use this to explain what the URL contains or why it is relevant to the evidence.",
                     "example": "This URL points to our updated access control policy that was implemented in Q1 2024.",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "effectiveDate": {
                     "description": "The date when this URL artifact was effective or relevant. This represents when the content at the URL was valid or applicable. If not provided, defaults to the current date.",
                     "example": "2023-01-01T00:00:00.000Z",
-                    "default": "2026-10-01T01:27:30.521Z",
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "default": "2026-11-10T01:59:21.410Z",
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "channelId": {
@@ -5056,6 +5416,560 @@
         "responses": {
           "204": {
             "description": "204 No Content"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/artifact-requests": {
+      "get": {
+        "tags": [
+          "Artifact Requests"
+        ],
+        "operationId": "getArtifactRequests",
+        "summary": "Get all artifact requests",
+        "description": "Returns a page of artifact requests from your workspace, sorted by due date and then by reference id (both ascending), optionally filtered by evidence and whether they are in the current period. For example, use `evidenceId` and `current=true` to find the artifact request(s) of an evidence for the current period. Use `page` and `pageSize` (at most 100) to move through the results; `pagination.totalPages` gives the number of pages.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "evidenceId",
+            "schema": {
+              "description": "Only return artifact requests on the evidence with this id",
+              "example": "a033d3c7-4b0a-4404-9131-99745694c1da",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": "Only return artifact requests on the evidence with this id"
+          },
+          {
+            "in": "query",
+            "name": "current",
+            "schema": {
+              "description": "true: only return artifact requests in the current period (the requested date is on or before today and the due date is on or after today, in the workspace timezone). false: only return artifact requests that are not in the current period.",
+              "example": true,
+              "type": "string"
+            },
+            "description": "true: only return artifact requests in the current period (the requested date is on or before today and the due date is on or after today, in the workspace timezone). false: only return artifact requests that are not in the current period."
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "description": "The page number to return, starting at 1. Defaults to 1 when not provided. A page after the last page returns an empty list.",
+              "example": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "description": "The page number to return, starting at 1. Defaults to 1 when not provided. A page after the last page returns an empty list."
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "default": 100,
+              "description": "The maximum number of artifact requests on each page. Must be between 1 and 100. Defaults to 100 when not provided.",
+              "example": 100,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "The maximum number of artifact requests on each page. Must be between 1 and 100. Defaults to 100 when not provided."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactRequestArrayResponseObject"
+                }
+              }
+            },
+            "links": {
+              "getArtifactRequests": {
+                "$ref": "#/components/links/getArtifactRequests"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/artifact-requests/{artifactRequestId}": {
+      "get": {
+        "tags": [
+          "Artifact Requests"
+        ],
+        "operationId": "getArtifactRequestById",
+        "summary": "Get an artifact request by ID",
+        "description": "Retrieves a specific artifact request by its internal ID (UUID).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artifactRequestId",
+            "schema": {
+              "$ref": "#/components/schemas/artifactRequestId"
+            },
+            "required": true,
+            "description": "An id that represents an artifact request within the Paramify application."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactRequestResponseObject"
+                }
+              }
+            },
+            "links": {
+              "getArtifactRequestById": {
+                "$ref": "#/components/links/getArtifactRequestById"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/batches": {
+      "get": {
+        "tags": [
+          "Batches"
+        ],
+        "operationId": "getBatches",
+        "summary": "Get all batches",
+        "description": "Returns a page of batches from your workspace, sorted by creation time and then by reference id (both ascending), optionally filtered by status, artifact request, and evidence. For example, use `artifactRequestId` and `status=OPEN` to find the open batch(es) of an artifact request. Use `page` and `pageSize` (at most 100) to move through the results; `pagination.totalPages` gives the number of pages.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "description": "Only return batches with this status",
+              "example": "OPEN",
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "SUBMITTED",
+                "REJECTED",
+                "APPROVED"
+              ]
+            },
+            "description": "Only return batches with this status"
+          },
+          {
+            "in": "query",
+            "name": "artifactRequestId",
+            "schema": {
+              "description": "Only return batches on the artifact request with this id",
+              "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": "Only return batches on the artifact request with this id"
+          },
+          {
+            "in": "query",
+            "name": "evidenceId",
+            "schema": {
+              "description": "Only return batches on the evidence with this id",
+              "example": "a033d3c7-4b0a-4404-9131-99745694c1da",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": "Only return batches on the evidence with this id"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "description": "The page number to return, starting at 1. Defaults to 1 when not provided. A page after the last page returns an empty list.",
+              "example": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "description": "The page number to return, starting at 1. Defaults to 1 when not provided. A page after the last page returns an empty list."
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema": {
+              "default": 100,
+              "description": "The maximum number of batches on each page. Must be between 1 and 100. Defaults to 100 when not provided.",
+              "example": 100,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "The maximum number of batches on each page. Must be between 1 and 100. Defaults to 100 when not provided."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchArrayResponseObject"
+                }
+              }
+            },
+            "links": {
+              "getBatches": {
+                "$ref": "#/components/links/getBatches"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Batches"
+        ],
+        "operationId": "createBatch",
+        "summary": "Create a batch",
+        "description": "Creates an `OPEN` batch and returns it. Provide `type: EVIDENCE` with an `evidenceId` to create the batch on that evidence, or `type: ARTIFACT_REQUEST` with an `artifactRequestId` to create the batch on that artifact request and its evidence. An evidence or artifact request that does not exist returns `404 Not Found`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostBatchRequestObject"
+              },
+              "examples": {
+                "evidence": {
+                  "summary": "Create the batch on an evidence",
+                  "value": {
+                    "type": "EVIDENCE",
+                    "evidenceId": "a033d3c7-4b0a-4404-9131-99745694c1da"
+                  }
+                },
+                "artifactRequest": {
+                  "summary": "Create the batch on an artifact request",
+                  "value": {
+                    "type": "ARTIFACT_REQUEST",
+                    "artifactRequestId": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponseObject"
+                }
+              }
+            },
+            "links": {
+              "createBatch": {
+                "$ref": "#/components/links/createBatch"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/batches/{batchId}": {
+      "get": {
+        "tags": [
+          "Batches"
+        ],
+        "operationId": "getBatchById",
+        "summary": "Get a batch by ID",
+        "description": "Retrieves a specific batch by its internal ID (UUID).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batchId",
+            "schema": {
+              "$ref": "#/components/schemas/batchId"
+            },
+            "required": true,
+            "description": "An id that represents a batch within the Paramify application."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponseObject"
+                }
+              }
+            },
+            "links": {
+              "getBatchById": {
+                "$ref": "#/components/links/getBatchById"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/batches/{batchId}/artifacts/upload": {
+      "post": {
+        "tags": [
+          "Batches"
+        ],
+        "operationId": "uploadArtifactToBatch",
+        "summary": "Upload a new file artifact to the specified batch",
+        "description": "Uploads a file as an artifact to the specified batch. The artifact is attached to the evidence and the channel (queue) of the batch, so you cannot set them. You can upload only while the batch is `OPEN` or `REJECTED`; other statuses return `409 Conflict`. Maximum file size: 10 GB.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batchId",
+            "schema": {
+              "$ref": "#/components/schemas/batchId"
+            },
+            "required": true,
+            "description": "An id that represents a batch within the Paramify application."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "artifact": {
+                  "contentType": "application/json"
+                },
+                "file": {
+                  "contentType": "application/octet-stream"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file to be uploaded as an artifact. Any file type is supported. The original filename will be preserved and used as the default title if no title is specified in the metadata.\n\n**IMPORTANT**: Filenames containing certain special characters may cause upload errors. URL-encode your filename to avoid issues -- it will be decoded automatically."
+                  },
+                  "artifact": {
+                    "$ref": "#/components/schemas/UploadBatchArtifactSchema"
+                  }
+                },
+                "required": [
+                  "file",
+                  "artifact"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            },
+            "links": {
+              "uploadArtifactToBatch": {
+                "$ref": "#/components/links/uploadArtifactToBatch"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/batches/{batchId}/submit": {
+      "post": {
+        "tags": [
+          "Batches"
+        ],
+        "operationId": "submitBatch",
+        "summary": "Submit the specified batch",
+        "description": "Submits the batch for approval and returns the updated batch. You can submit only while the batch is `OPEN` or `REJECTED` and it has at least one artifact; otherwise the request returns `409 Conflict`. The batch is approved and its artifacts are processed as configured by its own `whenToApprove` and `whenToCreateAndUpdateProcess`, which are copied from its evidence when the batch is created.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batchId",
+            "schema": {
+              "$ref": "#/components/schemas/batchId"
+            },
+            "required": true,
+            "description": "An id that represents a batch within the Paramify application."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponseObject"
+                }
+              }
+            },
+            "links": {
+              "submitBatch": {
+                "$ref": "#/components/links/submitBatch"
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -5981,28 +6895,20 @@
                             "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
                           },
                           "templateReferenceId": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The human-readable Solution Capability ID of the account-level template solution capability this capability was instantiated from, or null when the capability was not created from a template",
-                            "example": "SC-01"
+                            "example": "SC-01",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "referenceId": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The workspace capability's own human-readable Solution Capability ID, unique within the workspace. Seeded from the template's ID when the capability is instantiated, with a counter appended when that ID is already taken. Null for capabilities created before Paramify began recording this ID",
-                            "example": "SC-01 (1)"
+                            "example": "SC-01 (1)",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "name": {
                             "type": "string",
@@ -6034,28 +6940,20 @@
                             "example": "Account Management"
                           },
                           "risk": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The name of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
-                            "example": "Unauthorized Access"
+                            "example": "Unauthorized Access",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "riskFamily": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The category of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
-                            "example": "Identity and Access"
+                            "example": "Identity and Access",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "mainComponent": {
                             "anyOf": [
@@ -6070,16 +6968,12 @@
                                     "example": "b1e9a2c4-6f3d-4a17-9c58-2d0e7b4f81aa"
                                   },
                                   "referenceId": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
                                     "description": "The human-readable ID of the account template element the main component was created from, or null if it was not created from one",
-                                    "example": "RS-13-02"
+                                    "example": "RS-13-02",
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
                                   },
                                   "name": {
                                     "type": "string",
@@ -6087,16 +6981,12 @@
                                     "example": "Main Component Name"
                                   },
                                   "description": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
                                     "description": "The description of the main component",
-                                    "example": "Main Component Description"
+                                    "example": "Main Component Description",
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -6141,7 +7031,7 @@
                                       "email": {
                                         "type": "string",
                                         "format": "email",
-                                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                        "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                                         "description": "The email address of the owning user",
                                         "example": "john.doe@example.com"
                                       }
@@ -6213,16 +7103,12 @@
                                   "example": "Capability Provider"
                                 },
                                 "narrative": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ],
                                   "description": "The narrative written for the function, rendered as markdown, or null when no narrative has been written",
-                                  "example": "The provider enforces multi-factor authentication for all administrative access."
+                                  "example": "The provider enforces multi-factor authentication for all administrative access.",
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
                                 },
                                 "implementationStatus": {
                                   "type": "string",
@@ -6302,7 +7188,7 @@
                                           "email": {
                                             "type": "string",
                                             "format": "email",
-                                            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                                             "description": "The email address of the owning user",
                                             "example": "john.doe@example.com"
                                           }
@@ -6500,28 +7386,20 @@
                       "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
                     },
                     "templateReferenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The human-readable Solution Capability ID of the account-level template solution capability this capability was instantiated from, or null when the capability was not created from a template",
-                      "example": "SC-01"
+                      "example": "SC-01",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "referenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The workspace capability's own human-readable Solution Capability ID, unique within the workspace. Seeded from the template's ID when the capability is instantiated, with a counter appended when that ID is already taken. Null for capabilities created before Paramify began recording this ID",
-                      "example": "SC-01 (1)"
+                      "example": "SC-01 (1)",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "name": {
                       "type": "string",
@@ -6553,28 +7431,20 @@
                       "example": "Account Management"
                     },
                     "risk": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The name of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
-                      "example": "Unauthorized Access"
+                      "example": "Unauthorized Access",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "riskFamily": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The category of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
-                      "example": "Identity and Access"
+                      "example": "Identity and Access",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "mainComponent": {
                       "anyOf": [
@@ -6589,16 +7459,12 @@
                               "example": "b1e9a2c4-6f3d-4a17-9c58-2d0e7b4f81aa"
                             },
                             "referenceId": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ],
                               "description": "The human-readable ID of the account template element the main component was created from, or null if it was not created from one",
-                              "example": "RS-13-02"
+                              "example": "RS-13-02",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
                             },
                             "name": {
                               "type": "string",
@@ -6606,16 +7472,12 @@
                               "example": "Main Component Name"
                             },
                             "description": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ],
                               "description": "The description of the main component",
-                              "example": "Main Component Description"
+                              "example": "Main Component Description",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
                             }
                           },
                           "required": [
@@ -6660,7 +7522,7 @@
                                 "email": {
                                   "type": "string",
                                   "format": "email",
-                                  "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                  "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                                   "description": "The email address of the owning user",
                                   "example": "john.doe@example.com"
                                 }
@@ -6732,16 +7594,12 @@
                             "example": "Capability Provider"
                           },
                           "narrative": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The narrative written for the function, rendered as markdown, or null when no narrative has been written",
-                            "example": "The provider enforces multi-factor authentication for all administrative access."
+                            "example": "The provider enforces multi-factor authentication for all administrative access.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "implementationStatus": {
                             "type": "string",
@@ -6821,7 +7679,7 @@
                                     "email": {
                                       "type": "string",
                                       "format": "email",
-                                      "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                      "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                                       "description": "The email address of the owning user",
                                       "example": "john.doe@example.com"
                                     }
@@ -7020,28 +7878,20 @@
                       "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
                     },
                     "templateReferenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The human-readable Solution Capability ID of the account-level template solution capability this capability was instantiated from, or null when the capability was not created from a template",
-                      "example": "SC-01"
+                      "example": "SC-01",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "referenceId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The workspace capability's own human-readable Solution Capability ID, unique within the workspace. Seeded from the template's ID when the capability is instantiated, with a counter appended when that ID is already taken. Null for capabilities created before Paramify began recording this ID",
-                      "example": "SC-01 (1)"
+                      "example": "SC-01 (1)",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "name": {
                       "type": "string",
@@ -7073,28 +7923,20 @@
                       "example": "Account Management"
                     },
                     "risk": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The name of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
-                      "example": "Unauthorized Access"
+                      "example": "Unauthorized Access",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "riskFamily": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The category of the risk addressed by the solution capability's main component, or null when the main component is not a risk solution",
-                      "example": "Identity and Access"
+                      "example": "Identity and Access",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "mainComponent": {
                       "anyOf": [
@@ -7109,16 +7951,12 @@
                               "example": "b1e9a2c4-6f3d-4a17-9c58-2d0e7b4f81aa"
                             },
                             "referenceId": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ],
                               "description": "The human-readable ID of the account template element the main component was created from, or null if it was not created from one",
-                              "example": "RS-13-02"
+                              "example": "RS-13-02",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
                             },
                             "name": {
                               "type": "string",
@@ -7126,16 +7964,12 @@
                               "example": "Main Component Name"
                             },
                             "description": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ],
                               "description": "The description of the main component",
-                              "example": "Main Component Description"
+                              "example": "Main Component Description",
+                              "type": [
+                                "string",
+                                "null"
+                              ]
                             }
                           },
                           "required": [
@@ -7180,7 +8014,7 @@
                                 "email": {
                                   "type": "string",
                                   "format": "email",
-                                  "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                  "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                                   "description": "The email address of the owning user",
                                   "example": "john.doe@example.com"
                                 }
@@ -7252,16 +8086,12 @@
                             "example": "Capability Provider"
                           },
                           "narrative": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ],
                             "description": "The narrative written for the function, rendered as markdown, or null when no narrative has been written",
-                            "example": "The provider enforces multi-factor authentication for all administrative access."
+                            "example": "The provider enforces multi-factor authentication for all administrative access.",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "implementationStatus": {
                             "type": "string",
@@ -7341,7 +8171,7 @@
                                     "email": {
                                       "type": "string",
                                       "format": "email",
-                                      "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                                      "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                                       "description": "The email address of the owning user",
                                       "example": "john.doe@example.com"
                                     }
@@ -9802,6 +10632,7 @@
               "enum": [
                 "EXCUSE",
                 "ARTIFACT_REQUEST",
+                "BATCH",
                 "PROGRAM_INFORMATION_TYPE",
                 "PROGRAM_CONTROL",
                 "PROGRAM_REQUIREMENT",
@@ -9828,6 +10659,7 @@
                 "CONTACT",
                 "USER",
                 "WORKSPACE",
+                "TRUST_CENTER",
                 "IMPORT",
                 "ISSUE",
                 "TASK",
@@ -9847,6 +10679,7 @@
                 "PROGRAM_TYPE",
                 "CATALOG",
                 "FILE_INTAKE_PRESET",
+                "EXCUSE_PRESET",
                 "MASTER_DATA_PUBLISHING",
                 "CHANNEL",
                 "AI_SKILL",
@@ -9865,7 +10698,12 @@
                 "PIPELINE_JOB",
                 "ARTIFACT",
                 "CUSTOM_TAG",
-                "AUDIT_ASSESSMENT"
+                "AUDIT_ASSESSMENT",
+                "REPORTABLE_CHANGE",
+                "REPORTABLE_INCIDENT",
+                "DOCUMENT_ROBOT_FILE_REVISION",
+                "CHANGE_REQUEST",
+                "PIPELINE"
               ]
             },
             "description": "Filter by the type of entity the activity targeted."
@@ -10056,7 +10894,8 @@
           "FALSE_POSITIVE",
           "OPERATIONAL_REQUIREMENT",
           "RISK_ADJUSTMENT",
-          "VENDOR_DEPENDENCY"
+          "VENDOR_DEPENDENCY",
+          "ACCEPTED_VULNERABILITY"
         ]
       },
       "effectiveDateStart": {
@@ -10113,6 +10952,43 @@
           "type": "string"
         }
       },
+      "painRatings": {
+        "description": "A PAIN rating, or NOT_SET for issues without a PAIN rating. Can be passed multiple times to filter by multiple PAIN ratings.",
+        "example": [
+          "N4",
+          "N5",
+          "NOT_SET"
+        ],
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "N0",
+            "N1",
+            "N2",
+            "N3",
+            "N4",
+            "N5",
+            "NOT_SET"
+          ]
+        }
+      },
+      "issueStatuses": {
+        "description": "An issue status. Can be passed multiple times to filter by multiple statuses (OR logic).",
+        "example": [
+          "OPEN",
+          "ACCEPTED"
+        ],
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "ACCEPTED",
+            "CLOSED"
+          ]
+        }
+      },
       "IssueObservationTypes": {
         "type": "string",
         "enum": [
@@ -10131,7 +11007,8 @@
           "FALSE_POSITIVE",
           "OPERATIONAL_REQUIREMENT",
           "RISK_ADJUSTMENT",
-          "VENDOR_DEPENDENCY"
+          "VENDOR_DEPENDENCY",
+          "ACCEPTED_VULNERABILITY"
         ],
         "description": "Deviation observation types",
         "example": "VENDOR_DEPENDENCY"
@@ -10141,6 +11018,7 @@
         "properties": {
           "title": {
             "type": "string",
+            "minLength": 1,
             "description": "The title of the task",
             "example": "Task Title Example"
           },
@@ -10152,13 +11030,9 @@
           "dueStart": {
             "description": "The start date of the task",
             "example": "2022-01-01T00:00:00.000Z",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "dueEnd": {
@@ -10183,6 +11057,13 @@
       "DeviationMetadataObject": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The name of the deviation",
+            "example": "Vendor patch pending"
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -10205,13 +11086,9 @@
           "acceptanceStatusDate": {
             "description": "The date the deviation status was accepted or rejected",
             "example": "2022-01-01T00:00:00.000Z",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           }
         },
@@ -10286,6 +11163,110 @@
           }
         },
         "description": "Schema for creating new file artifacts. All fields are optional - you can upload a file with minimal metadata and enhance it later."
+      },
+      "artifactRequestId": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+        "description": "An id that represents an artifact request within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "PostBatchRequestObject": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PostArtifactRequestBatchRequestObject"
+          },
+          {
+            "$ref": "#/components/schemas/PostEvidenceBatchRequestObject"
+          }
+        ],
+        "description": "An object containing the type of what to create the batch on, and the id of the evidence or artifact request.",
+        "type": "object",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "ARTIFACT_REQUEST": "#/components/schemas/PostArtifactRequestBatchRequestObject",
+            "EVIDENCE": "#/components/schemas/PostEvidenceBatchRequestObject"
+          }
+        }
+      },
+      "PostArtifactRequestBatchRequestObject": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "ARTIFACT_REQUEST",
+            "description": "Creates the batch on an artifact request",
+            "example": "ARTIFACT_REQUEST"
+          },
+          "artifactRequestId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The id of the artifact request to create the batch on. The batch is on the evidence of the artifact request.",
+            "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+          }
+        },
+        "required": [
+          "type",
+          "artifactRequestId"
+        ],
+        "additionalProperties": false,
+        "description": "Creates the batch on an artifact request and its evidence."
+      },
+      "PostEvidenceBatchRequestObject": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "EVIDENCE",
+            "description": "Creates the batch on an evidence",
+            "example": "EVIDENCE"
+          },
+          "evidenceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The id of the evidence to create the batch on",
+            "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+          }
+        },
+        "required": [
+          "type",
+          "evidenceId"
+        ],
+        "additionalProperties": false,
+        "description": "Creates the batch on an evidence."
+      },
+      "batchId": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+        "description": "An id that represents a batch within the Paramify application.",
+        "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "UploadBatchArtifactSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "A descriptive title for the artifact. If not provided, the original filename will be used as the title.",
+            "example": "Q1 2024 Vulnerability Assessment Report",
+            "type": "string"
+          },
+          "note": {
+            "description": "Additional notes or comments about the artifact. Use this field to provide context, explanations, or any relevant information about the artifact.",
+            "example": "This report contains the results of the quarterly vulnerability scan conducted on our production infrastructure.",
+            "type": "string"
+          },
+          "effectiveDate": {
+            "description": "The date when this artifact was effective or relevant, as `YYYY-MM-DD`. This may differ from the upload date and represents when the data or document was actually valid. If not provided, defaults to the current date in the workspace's timezone.",
+            "example": "2022-01-01",
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "description": "Metadata for the artifact being uploaded to the batch. All fields are optional. The evidence and the channel (queue) of the artifact come from the batch."
       },
       "assessmentId": {
         "type": "string",
@@ -11487,13 +12468,9 @@
                   ]
                 },
                 "remarks": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
+                  "type": [
+                    "string",
+                    "null"
                   ]
                 }
               },
@@ -11522,28 +12499,20 @@
             "type": "string"
           },
           "programType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The name of the program type, if this is a customizable program. Null otherwise.",
-            "example": "FedRAMP Rev 5"
+            "example": "FedRAMP Rev 5",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "complianceProfile": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The name of the compliance profile selected on the program, if this is a customizable program. Null otherwise.",
-            "example": "Moderate"
+            "example": "Moderate",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -11587,7 +12556,7 @@
               "timestamp": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                 "description": "The date and time the error occurred as an ISO string.",
                 "example": "1955-10-05T00:00:00.000Z"
               },
@@ -11600,13 +12569,9 @@
                     "path": {
                       "type": "array",
                       "items": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          }
+                        "type": [
+                          "string",
+                          "number"
                         ]
                       },
                       "description": "The path of the request that caused the error.",
@@ -11700,15 +12665,11 @@
             "example": "HIGH"
           },
           "numericRiskRating": {
-            "description": "The numeric risk rating of the issue. Null when the issue has no score, which can also happen when originalLevelSource is set but the source published no score for it. How to read it depends on originalLevelSource: NIST_CVSS_4_0 and NIST_CVSS_3_1 ratings are CVSS base scores (0-10), and MECHANISM_RISK_RATING ratings are on the scale the file intake preset configures, so no single scale can be assumed.",
+            "description": "The numeric risk rating of the issue. Null when the issue has no score, which can also happen when originalLevelSource is set but the source published no score for it. How to read it depends on originalLevelSource: NIST_CVSS_4_0, NIST_CVSS_3_1, and NIST_CVSS_2_0 ratings are CVSS base scores (0-10), and MECHANISM_RISK_RATING ratings are on the scale the file intake preset configures, so no single scale can be assumed.",
             "example": 8.1,
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "originalLevelSource": {
@@ -11720,6 +12681,7 @@
                 "enum": [
                   "NIST_CVSS_4_0",
                   "NIST_CVSS_3_1",
+                  "NIST_CVSS_2_0",
                   "MECHANISM_RISK_RATING"
                 ]
               },
@@ -11727,6 +12689,26 @@
                 "type": "null"
               }
             ]
+          },
+          "painRating": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "N0",
+                  "N1",
+                  "N2",
+                  "N3",
+                  "N4",
+                  "N5"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The PAIN rating of the issue. Null when the PAIN rating is not set.",
+            "example": "N2"
           },
           "pointOfContact": {
             "description": "The point of contact for the issue, falling back to the issue owner when no point of contact is set",
@@ -11746,7 +12728,7 @@
                       {
                         "type": "string",
                         "format": "email",
-                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                        "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                       },
                       {
                         "type": "null"
@@ -11767,13 +12749,9 @@
           "pluginId": {
             "description": "The plugin id associated with the issue",
             "example": "plugin-123",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "cveIds": {
@@ -11830,14 +12808,15 @@
             ]
           },
           "status": {
-            "description": "The current status of the issue",
+            "description": "The issue's status. `ACCEPTED` is derived from the issue's approved `FALSE_POSITIVE`, `OPERATIONAL_REQUIREMENT` or `ACCEPTED_VULNERABILITY` deviations.",
             "example": "OPEN",
             "anyOf": [
               {
                 "type": "string",
                 "enum": [
                   "OPEN",
-                  "CLOSED"
+                  "CLOSED",
+                  "ACCEPTED"
                 ]
               },
               {
@@ -11848,13 +12827,9 @@
           "statusDate": {
             "description": "The date the current status was set",
             "example": "2022-01-01T00:00:00.000Z",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "origin": {
@@ -11928,49 +12903,33 @@
           "dueDate": {
             "description": "The date the issue is due",
             "example": "2022-01-01T00:00:00.000Z",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "description": {
             "description": "Text describing the issue",
             "example": "This is a detailed description of the issue.",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "remarks": {
             "description": "Additional remarks or notes about the issue",
             "example": "This issue requires immediate attention due to security implications.",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "remediationDescription": {
             "description": "Description of the remediation for the issue",
             "example": "This is a detailed description of the remediation.",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "type": {
@@ -11983,39 +12942,44 @@
             "type": "string"
           },
           "internetReachableVulnerability": {
-            "description": "Whether the issue represents an internet-reachable vulnerability.",
+            "description": "Whether the issue represents an internet-reachable vulnerability. Null when it is not set.",
             "example": false,
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "boolean",
+              "null"
             ]
           },
           "likelyExploitableVulnerability": {
-            "description": "Whether the issue represents a likely-exploitable vulnerability.",
+            "description": "Whether the issue represents a likely-exploitable vulnerability. Null when it is not set.",
             "example": false,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "forensicTriageStatus": {
             "anyOf": [
               {
-                "type": "boolean"
+                "type": "string",
+                "enum": [
+                  "NOT_COMPLETE",
+                  "IN_PROGRESS",
+                  "COMPLETED"
+                ]
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "The issue's Required Forensic Triage status. Null when none of its CVE IDs requires forensic triage in the KEV catalog.",
+            "example": "IN_PROGRESS"
           },
           "evaluationDate": {
             "description": "The evaluation date for the issue.",
             "example": "2022-01-01T00:00:00.000Z",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "deviations": {
@@ -12028,6 +12992,7 @@
                 "type": "VENDOR_DEPENDENCY",
                 "createdAt": "2022-01-01T00:00:00Z",
                 "deviationMetadata": {
+                  "name": "Vendor patch pending",
                   "status": "PENDING",
                   "adjustedLevel": "MODERATE",
                   "acceptanceStatusDate": "2022-02-01T00:00:00.000Z"
@@ -12108,28 +13073,20 @@
                       "example": "This is a detailed description of the milestone."
                     },
                     "dueStart": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The start date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "dueEnd": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
                       "description": "The end date of the milestone",
-                      "example": "2022-01-01T00:00:00.000Z"
+                      "example": "2022-01-01T00:00:00.000Z",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -12157,6 +13114,12 @@
               "Critical",
               "Q4 Review"
             ]
+          },
+          "vdrAcceptedVulnerability": {
+            "type": "boolean",
+            "description": "Read-only and ignored on writes. `true` when the issue is `ACCEPTED` only through approved `ACCEPTED_VULNERABILITY` deviations.",
+            "readOnly": true,
+            "example": false
           }
         },
         "required": [
@@ -12165,9 +13128,12 @@
           "poamId",
           "level",
           "originalLevel",
+          "painRating",
           "type",
           "createdAt",
-          "customTags"
+          "forensicTriageStatus",
+          "customTags",
+          "vdrAcceptedVulnerability"
         ],
         "additionalProperties": false,
         "description": "An object containing information about issues contained within a project"
@@ -12297,6 +13263,11 @@
           "deviationMetadata": {
             "type": "object",
             "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the deviation",
+                "example": "Vendor patch pending"
+              },
               "status": {
                 "type": "string",
                 "enum": [
@@ -12326,17 +13297,14 @@
               "acceptanceStatusDate": {
                 "description": "The date the deviation status was accepted or rejected",
                 "example": "2022-01-01T00:00:00.000Z",
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
+                "type": [
+                  "string",
+                  "null"
                 ]
               }
             },
             "required": [
+              "name",
               "status"
             ],
             "additionalProperties": false,
@@ -12396,6 +13364,9 @@
                     "COM_SERVICE",
                     "COM_SOFTWARE",
                     "COM_SUBNET",
+                    "COM_SYSTEM",
+                    "COM_USER_CONFIGURED",
+                    "COM_USER_PROVIDED",
                     "PAR_ORGANIZATION",
                     "PAR_PERSON"
                   ]
@@ -12521,28 +13492,20 @@
                 "const": "user"
               },
               "username": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
                 "description": "Display name for the channel owner",
-                "example": "john.doe"
+                "example": "john.doe",
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "email": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
                 "description": "Email for the channel owner",
-                "example": "john.doe@company.com"
+                "example": "john.doe@company.com",
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -12560,16 +13523,12 @@
                 "const": "team"
               },
               "name": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
                 "description": "Name of the team that owns the channel",
-                "example": "Team 1"
+                "example": "Team 1",
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -12603,16 +13562,12 @@
             "example": "Q1 2024 Vulnerability Assessment Report"
           },
           "originalFileName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The original filename when the artifact was uploaded. This field is null for URL artifacts.",
-            "example": "vulnerability-report-q1-2024.csv"
+            "example": "vulnerability-report-q1-2024.csv",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "pathname": {
             "type": "string",
@@ -12620,16 +13575,12 @@
             "example": "https://docs.company.com/security/policies/access-control"
           },
           "note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "Additional notes or comments about the artifact. Can be null if no note was provided.",
-            "example": "This report contains the results of the quarterly vulnerability scan conducted on our production infrastructure."
+            "example": "This report contains the results of the quarterly vulnerability scan conducted on our production infrastructure.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "isUrl": {
             "type": "boolean",
@@ -12637,16 +13588,12 @@
             "example": false
           },
           "fileType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "MIME type of the file (e.g., text/csv, application/json). This field is null for URL artifacts.",
-            "example": "text/csv"
+            "example": "text/csv",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "createdAt": {
             "description": "ISO 8601 timestamp when the artifact was created in the system",
@@ -12657,23 +13604,15 @@
             "type": "object",
             "properties": {
               "username": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
+                "type": [
+                  "string",
+                  "null"
                 ]
               },
               "email": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
+                "type": [
+                  "string",
+                  "null"
                 ]
               }
             },
@@ -12692,6 +13631,20 @@
             "description": "The date when this artifact was effective or relevant. This may differ from createdAt and represents when the data was actually valid.",
             "example": "2022-01-01T00:00:00.000Z",
             "type": "string"
+          },
+          "batchId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The id of the batch this artifact was uploaded to. This field is null when the artifact is not in a batch.",
+            "example": "0b2f6c1e-8d4a-4f7b-9c3e-5a1d2e3f4a5b"
           },
           "validators": {
             "type": "array",
@@ -12754,10 +13707,278 @@
           "isUrl",
           "createdAt",
           "createdBy",
+          "batchId",
           "validators"
         ],
         "additionalProperties": false,
         "description": "Complete artifact object containing all metadata, file information, and creation details. Artifacts can be either uploaded files or URL references."
+      },
+      "ArtifactRequestArrayResponseObject": {
+        "type": "object",
+        "properties": {
+          "artifactRequests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtifactRequestResponseObject"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The page number of this response, starting at 1",
+                "example": 1
+              },
+              "pageSize": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The maximum number of artifact requests on each page",
+                "example": 100
+              },
+              "totalCount": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The total number of artifact requests that match the filters",
+                "example": 137
+              },
+              "totalPages": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The total number of pages for the filters and the page size",
+                "example": 2
+              }
+            },
+            "required": [
+              "page",
+              "pageSize",
+              "totalCount",
+              "totalPages"
+            ],
+            "additionalProperties": false,
+            "description": "The pagination information for the artifact requests."
+          }
+        },
+        "required": [
+          "artifactRequests",
+          "pagination"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing a page of artifact requests, sorted by due date and then by reference id (both ascending)."
+      },
+      "ArtifactRequestResponseObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A uuid that uniquely identifies an individual artifact request within Paramify",
+            "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+          },
+          "referenceId": {
+            "type": "string",
+            "description": "The human readable identifier of the artifact request, unique in the workspace",
+            "example": "ART-REQ-2024-01"
+          },
+          "requestedDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+            "description": "The date the artifact request was requested (YYYY-MM-DD)",
+            "example": "2024-01-01"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+            "description": "The date the artifact request is due (YYYY-MM-DD)",
+            "example": "2024-03-31"
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The id of the channel (queue) this artifact request is on",
+            "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+          },
+          "evidenceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The id of the evidence this artifact request is on",
+            "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+          },
+          "batchCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "The number of batches on this artifact request",
+            "example": 1
+          }
+        },
+        "required": [
+          "id",
+          "referenceId",
+          "requestedDate",
+          "dueDate",
+          "channelId",
+          "evidenceId",
+          "batchCount"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing information about an artifact request."
+      },
+      "BatchArrayResponseObject": {
+        "type": "object",
+        "properties": {
+          "batches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchResponseObject"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The page number of this response, starting at 1",
+                "example": 1
+              },
+              "pageSize": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The maximum number of batches on each page",
+                "example": 100
+              },
+              "totalCount": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The total number of batches that match the filters",
+                "example": 137
+              },
+              "totalPages": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "The total number of pages for the filters and the page size",
+                "example": 2
+              }
+            },
+            "required": [
+              "page",
+              "pageSize",
+              "totalCount",
+              "totalPages"
+            ],
+            "additionalProperties": false,
+            "description": "The pagination information for the batches."
+          }
+        },
+        "required": [
+          "batches",
+          "pagination"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing a page of batches, sorted by creation time and then by reference id (both ascending)."
+      },
+      "BatchResponseObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A uuid that uniquely identifies an individual batch within Paramify",
+            "example": "0b2f6c1e-8d4a-4f7b-9c3e-5a1d2e3f4a5b"
+          },
+          "referenceId": {
+            "type": "string",
+            "description": "The human readable identifier of the batch, unique in the workspace",
+            "example": "BATCH-2024-01"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "SUBMITTED",
+              "REJECTED",
+              "APPROVED"
+            ],
+            "description": "The current status of the batch. OPEN: artifacts can be uploaded and it can be submitted once it contains at least one artifact. SUBMITTED: waiting for approval or rejection. REJECTED: artifacts can be uploaded and it can be submitted again. APPROVED: done.",
+            "example": "OPEN"
+          },
+          "evidenceId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The id of the evidence this batch is on",
+            "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+          },
+          "artifactRequestId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The id of the artifact request this batch is on. This field is null when the batch is not on an artifact request.",
+            "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+          },
+          "artifactCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "The number of artifacts in this batch",
+            "example": 2
+          },
+          "whenToApprove": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "SUBMISSION_WITH_PASSING_VALIDATORS",
+              "SUBMISSION"
+            ],
+            "description": "When this batch is approved, copied from its evidence when the batch is created. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+            "example": "SUBMISSION"
+          },
+          "whenToCreateAndUpdateProcess": {
+            "type": "string",
+            "enum": [
+              "UPON_UPLOAD",
+              "MANUAL",
+              "APPROVAL"
+            ],
+            "description": "When Create & Update Processing runs on artifacts of this batch, copied from its evidence when the batch is created. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+            "example": "MANUAL"
+          }
+        },
+        "required": [
+          "id",
+          "referenceId",
+          "status",
+          "evidenceId",
+          "artifactRequestId",
+          "artifactCount",
+          "whenToApprove",
+          "whenToCreateAndUpdateProcess"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing information about a batch."
       },
       "AssessmentResponseObject": {
         "type": "object",
@@ -12861,16 +14082,12 @@
             "example": "VULNERABILITY"
           },
           "referenceId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The human-readable reference identifier of the assessment.",
-            "example": "ASSESS-2024-Q1-001"
+            "example": "ASSESS-2024-Q1-001",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "cycles": {
             "type": "array",
@@ -12904,16 +14121,12 @@
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "referenceId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "A custom reference identifier for the assessment cycle.",
-            "example": "CYCLE-1"
+            "example": "CYCLE-1",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "type": "string",
@@ -13519,7 +14732,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
             "description": "When the job was queued",
             "example": "2024-01-15T00:00:00.000Z"
           },
@@ -13528,7 +14741,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -13542,7 +14755,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -13552,16 +14765,12 @@
             "example": "2024-01-15T00:00:00.000Z"
           },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The reason the job did not complete. Null for a job that has never failed",
-            "example": "The uploaded file could not be parsed."
+            "example": "The uploaded file could not be parsed.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "blockedByJobId": {
             "anyOf": [
@@ -13762,7 +14971,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
             "description": "When the job was queued",
             "example": "2024-01-15T00:00:00.000Z"
           },
@@ -13771,7 +14980,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -13785,7 +14994,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -13795,16 +15004,12 @@
             "example": "2024-01-15T00:00:00.000Z"
           },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The reason the job did not complete. Null for a job that has never failed",
-            "example": "The uploaded file could not be parsed."
+            "example": "The uploaded file could not be parsed.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "blockedByJobId": {
             "anyOf": [
@@ -13932,7 +15137,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
             "description": "When the job was queued",
             "example": "2024-01-15T00:00:00.000Z"
           },
@@ -13941,7 +15146,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -13955,7 +15160,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -13965,16 +15170,12 @@
             "example": "2024-01-15T00:00:00.000Z"
           },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
             "description": "The reason the job did not complete. Null for a job that has never failed",
-            "example": "The uploaded file could not be parsed."
+            "example": "The uploaded file could not be parsed.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "blockedByJobId": {
             "anyOf": [
@@ -14195,7 +15396,7 @@
           "timestamp": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
             "description": "The UTC ISO timestamp when the activity occurred.",
             "example": "2024-01-15T12:00:00.000Z"
           },
@@ -14348,6 +15549,7 @@
                 "enum": [
                   "EXCUSE",
                   "ARTIFACT_REQUEST",
+                  "BATCH",
                   "PROGRAM_INFORMATION_TYPE",
                   "PROGRAM_CONTROL",
                   "PROGRAM_REQUIREMENT",
@@ -14374,6 +15576,7 @@
                   "CONTACT",
                   "USER",
                   "WORKSPACE",
+                  "TRUST_CENTER",
                   "IMPORT",
                   "ISSUE",
                   "TASK",
@@ -14393,6 +15596,7 @@
                   "PROGRAM_TYPE",
                   "CATALOG",
                   "FILE_INTAKE_PRESET",
+                  "EXCUSE_PRESET",
                   "MASTER_DATA_PUBLISHING",
                   "CHANNEL",
                   "AI_SKILL",
@@ -14411,7 +15615,12 @@
                   "PIPELINE_JOB",
                   "ARTIFACT",
                   "CUSTOM_TAG",
-                  "AUDIT_ASSESSMENT"
+                  "AUDIT_ASSESSMENT",
+                  "REPORTABLE_CHANGE",
+                  "REPORTABLE_INCIDENT",
+                  "DOCUMENT_ROBOT_FILE_REVISION",
+                  "CHANGE_REQUEST",
+                  "PIPELINE"
                 ],
                 "description": "The type of entity the activity targeted.",
                 "example": "ISSUE"
@@ -14881,6 +16090,55 @@
         "description": "The `id` value of the artifact returned can be used as the `artifactId` parameter in the `artifacts` route.",
         "parameters": {
           "artifactId": "$response.body#/id"
+        }
+      },
+      "getArtifactRequests": {
+        "operationId": "getArtifactRequests",
+        "description": "The `id` value of the artifact request(s) returned can be used as the `artifactRequestId` parameter in the `artifact-requests` route.",
+        "parameters": {
+          "artifactRequestId": "$response.body#/artifactRequests/0/id"
+        }
+      },
+      "getArtifactRequestById": {
+        "operationId": "getArtifactRequestById",
+        "description": "The `id` value of the artifact request returned can be used as the `artifactRequestId` parameter in the `artifact-requests` route.",
+        "parameters": {
+          "artifactRequestId": "$response.body#/id"
+        }
+      },
+      "getBatches": {
+        "operationId": "getBatches",
+        "description": "The `id` value of the batch(es) returned can be used as the `batchId` parameter in the `batches` route.",
+        "parameters": {
+          "batchId": "$response.body#/batches/0/id"
+        }
+      },
+      "getBatchById": {
+        "operationId": "getBatchById",
+        "description": "The `id` value of the batch returned can be used as the `batchId` parameter in the `batches` route.",
+        "parameters": {
+          "batchId": "$response.body#/id"
+        }
+      },
+      "createBatch": {
+        "operationId": "createBatch",
+        "description": "The `id` value of the batch returned can be used as the `batchId` parameter in the `batches` route.",
+        "parameters": {
+          "batchId": "$response.body#/id"
+        }
+      },
+      "uploadArtifactToBatch": {
+        "operationId": "uploadArtifactToBatch",
+        "description": "The `id` value of the artifact returned can be used as the `artifactId` parameter in the `artifacts` route.",
+        "parameters": {
+          "artifactId": "$response.body#/id"
+        }
+      },
+      "submitBatch": {
+        "operationId": "submitBatch",
+        "description": "The `id` value of the batch returned can be used as the `batchId` parameter in the `batches` route.",
+        "parameters": {
+          "batchId": "$response.body#/id"
         }
       },
       "getAssessments": {
