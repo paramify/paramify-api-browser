@@ -14,7 +14,7 @@
   <header>
     <h1>Paramify API Browser</h1>
     <div style="margin-top: 6px; font-size: 14px; color: #555;">
-      <span><strong>API Version:</strong> 0.14.0</span>
+      <span><strong>API Version:</strong> 0.15.0</span>
       <span style="margin: 0 8px;">|</span>
       <a href="https://app.paramify.com/api/documentation/" target="_blank" rel="noopener noreferrer">API Docs</a>
     </div>
@@ -217,12 +217,23 @@
               <option value="program-requirements">program-requirements</option>
               <option value="program-controls">program-controls</option>
               <option value="content-records">content-records</option>
+              <option value="excuse-presets">excuse-presets</option>
               <option value="excuses">excuses</option>
             </select>
             <label for="entityId" class="id-label">Entity ID:</label>
             <input type="text" id="entityId" name="entityId" placeholder="Enter entity UUID" class="id-input">
           </div>
           <button class="api-button custom-tag-endpoint" data-endpoint-template="/custom-tags/{entity}/{entityId}" data-requires-custom-tag="true">Custom Tags for Entity</button>
+        </details>
+
+        <details class="endpoint-group">
+          <summary>Pipelines</summary>
+          <button class="api-button" data-endpoint="/pipelines">Pipelines</button>
+          <div style="margin-bottom: 10px;">
+            <label for="pipelineId" class="id-label">Pipeline ID:</label>
+            <input type="text" id="pipelineId" name="pipelineId" placeholder="Enter pipeline UUID" class="id-input">
+          </div>
+          <button class="api-button pipeline-endpoint" data-endpoint-template="/pipelines/{pipelineId}" data-requires-pipeline="true">Get Pipeline by ID</button>
         </details>
 
         <details class="endpoint-group">
