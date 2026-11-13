@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Paramify REST API Documentation",
-    "version": "0.14.0",
+    "version": "0.15.0",
     "description": "This is the REST API documentation for the Paramify application."
   },
   "servers": [
@@ -825,7 +825,7 @@
                     ]
                   },
                   "dueDate": {
-                    "description": "The date the issue is due",
+                    "description": "The date the issue is due. Omit to calculate it from the project's remediation SLAs. When PAIN SLAs are enabled, that uses `painRating`, or one calculated from the risk level of the issue (the adjusted level of a risk adjustment deviation, otherwise `originalLevel`) when `painRating` is omitted.",
                     "example": "2022-01-01T00:00:00.000Z",
                     "type": [
                       "string",
@@ -3668,7 +3668,7 @@
         ],
         "operationId": "getEvidence",
         "summary": "Get all evidence",
-        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs), referenceId (custom identifiers like \"EVD-1\"), or validatorId (the validators paired with the evidence). Use the dedicated artifacts endpoint to retrieve artifacts for a specific evidence.",
+        "description": "Retrieves all evidence records from your workspace. Filter by id (internal UUIDs), referenceId (custom identifiers like \"EVD-1\"), validatorId (the validators paired with the evidence), or pipelineId (the pipelines paired with the evidence). Use the dedicated artifacts endpoint to retrieve artifacts for a specific evidence.",
         "parameters": [
           {
             "in": "query",
@@ -3720,6 +3720,23 @@
               }
             },
             "description": "Filter by validator ID. Returns the evidence records paired with any of the given validators."
+          },
+          {
+            "in": "query",
+            "name": "pipelineId",
+            "schema": {
+              "description": "Filter by pipeline ID. Returns the evidence records paired with any of the given pipelines.",
+              "example": [
+                "a2c4e6f8-0b1d-4e3f-9a5c-7d9e1f3a5b7c"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "description": "Filter by pipeline ID. Returns the evidence records paired with any of the given pipelines."
           }
         ],
         "responses": {
@@ -3779,6 +3796,13 @@
                               "$ref": "#/components/schemas/EvidenceValidatorResponse"
                             },
                             "description": "The validators paired with this evidence, each with the id of its pairing"
+                          },
+                          "pipelines": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/EvidencePipelineResponse"
+                            },
+                            "description": "The pipelines paired with this evidence, each with the id of its pairing"
                           },
                           "artifactCount": {
                             "type": "integer",
@@ -3850,6 +3874,7 @@
                           "name",
                           "automated",
                           "validators",
+                          "pipelines",
                           "artifactCount",
                           "frequency",
                           "whenToApproveArtifactRequest",
@@ -4058,6 +4083,13 @@
                       },
                       "description": "The validators paired with this evidence, each with the id of its pairing"
                     },
+                    "pipelines": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidencePipelineResponse"
+                      },
+                      "description": "The pipelines paired with this evidence, each with the id of its pairing"
+                    },
                     "artifactCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -4128,6 +4160,7 @@
                     "name",
                     "automated",
                     "validators",
+                    "pipelines",
                     "artifactCount",
                     "frequency",
                     "whenToApproveArtifactRequest",
@@ -4240,6 +4273,13 @@
                       },
                       "description": "The validators paired with this evidence, each with the id of its pairing"
                     },
+                    "pipelines": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidencePipelineResponse"
+                      },
+                      "description": "The pipelines paired with this evidence, each with the id of its pairing"
+                    },
                     "artifactCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -4310,6 +4350,7 @@
                     "name",
                     "automated",
                     "validators",
+                    "pipelines",
                     "artifactCount",
                     "frequency",
                     "whenToApproveArtifactRequest",
@@ -4511,6 +4552,13 @@
                       },
                       "description": "The validators paired with this evidence, each with the id of its pairing"
                     },
+                    "pipelines": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvidencePipelineResponse"
+                      },
+                      "description": "The pipelines paired with this evidence, each with the id of its pairing"
+                    },
                     "artifactCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -4581,6 +4629,7 @@
                     "name",
                     "automated",
                     "validators",
+                    "pipelines",
                     "artifactCount",
                     "frequency",
                     "whenToApproveArtifactRequest",
@@ -4669,7 +4718,7 @@
         ],
         "operationId": "postEvidenceAssociate",
         "summary": "Associate evidence with a subject",
-        "description": "Associates or disassociates an evidence record with a subject. Supported subject types are: `CONTROL_IMPLEMENTATION`, `SOLUTION_CAPABILITY`, `ELEMENT`, `VALIDATOR`, and `SCRIPT`. Use the `associationType` field to connect or disconnect the association.",
+        "description": "Associates or disassociates an evidence record with a subject. Supported subject types are: `CONTROL_IMPLEMENTATION`, `SOLUTION_CAPABILITY`, `ELEMENT`, `VALIDATOR`, `PIPELINE` (`INVENTORY` pipelines only), and `SCRIPT`. Use the `associationType` field to connect or disconnect the association.",
         "parameters": [
           {
             "in": "path",
@@ -4704,6 +4753,7 @@
                       "SOLUTION_CAPABILITY",
                       "ELEMENT",
                       "VALIDATOR",
+                      "PIPELINE",
                       "SCRIPT"
                     ],
                     "description": "The type of subject to associate the evidence with.",
@@ -5057,7 +5107,7 @@
                   "effectiveDate": {
                     "description": "The date when this URL artifact was effective or relevant. This represents when the content at the URL was valid or applicable. If not provided, defaults to the current date.",
                     "example": "2023-01-01T00:00:00.000Z",
-                    "default": "2026-11-10T01:59:21.410Z",
+                    "default": "2026-11-13T02:54:57.530Z",
                     "type": [
                       "string",
                       "null"
@@ -5596,6 +5646,73 @@
             "$ref": "#/components/responses/NotImplemented"
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "Artifact Requests"
+        ],
+        "operationId": "updateArtifactRequest",
+        "summary": "Update the status of an artifact request",
+        "description": "Sets the `status` of the artifact request and returns the updated artifact request. An artifact request that does not exist returns `404 Not Found`.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "artifactRequestId",
+            "schema": {
+              "$ref": "#/components/schemas/artifactRequestId"
+            },
+            "required": true,
+            "description": "An id that represents an artifact request within the Paramify application."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchArtifactRequestRequestObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactRequestResponseObject"
+                }
+              }
+            },
+            "links": {
+              "updateArtifactRequest": {
+                "$ref": "#/components/links/updateArtifactRequest"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
       }
     },
     "/batches": {
@@ -5719,7 +5836,7 @@
         ],
         "operationId": "createBatch",
         "summary": "Create a batch",
-        "description": "Creates an `OPEN` batch and returns it. Provide `type: EVIDENCE` with an `evidenceId` to create the batch on that evidence, or `type: ARTIFACT_REQUEST` with an `artifactRequestId` to create the batch on that artifact request and its evidence. An evidence or artifact request that does not exist returns `404 Not Found`.",
+        "description": "Creates an `OPEN` batch and returns it. Provide `type: EVIDENCE` with an `evidenceId` to create the batch on that evidence, or `type: ARTIFACT_REQUEST` with an `artifactRequestId` to create the batch on that artifact request and its evidence. An evidence or artifact request that does not exist returns `404 Not Found`. Optionally provide `whenToApprove` and `whenToCreateAndUpdateProcess` to set them on the batch; a setting left out is copied from the evidence.",
         "requestBody": {
           "required": true,
           "content": {
@@ -5818,6 +5935,73 @@
             "links": {
               "getBatchById": {
                 "$ref": "#/components/links/getBatchById"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Batches"
+        ],
+        "operationId": "updateBatch",
+        "summary": "Update the settings of a batch",
+        "description": "Changes `whenToApprove` and/or `whenToCreateAndUpdateProcess` of the batch and returns the updated batch. A setting left out is not changed. Provide at least one setting. A batch that does not exist returns `404 Not Found`.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batchId",
+            "schema": {
+              "$ref": "#/components/schemas/batchId"
+            },
+            "required": true,
+            "description": "An id that represents a batch within the Paramify application."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchBatchRequestObject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponseObject"
+                }
+              }
+            },
+            "links": {
+              "updateBatch": {
+                "$ref": "#/components/links/updateBatch"
               }
             }
           },
@@ -5943,7 +6127,7 @@
         ],
         "operationId": "submitBatch",
         "summary": "Submit the specified batch",
-        "description": "Submits the batch for approval and returns the updated batch. You can submit only while the batch is `OPEN` or `REJECTED` and it has at least one artifact; otherwise the request returns `409 Conflict`. The batch is approved and its artifacts are processed as configured by its own `whenToApprove` and `whenToCreateAndUpdateProcess`, which are copied from its evidence when the batch is created.",
+        "description": "Submits the batch for approval and returns the updated batch. You can submit only while the batch is `OPEN` or `REJECTED` and it has at least one artifact; otherwise the request returns `409 Conflict`. The batch is approved and its artifacts are processed as configured by the batch's current `whenToApprove` and `whenToCreateAndUpdateProcess`.",
         "parameters": [
           {
             "in": "path",
@@ -7280,6 +7464,52 @@
                                     "additionalProperties": false
                                   },
                                   "description": "The validator-evidence pairs associated with the function"
+                                },
+                                "pipelineEvidencePairs": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "pipelineEvidencePairId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the pipeline-evidence pair within Paramify",
+                                        "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+                                      },
+                                      "pipelineId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the pipeline of the pair within Paramify",
+                                        "example": "a2c4e6f8-0b1d-4e3f-9a5c-7d9e1f3a5b7c"
+                                      },
+                                      "evidenceId": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                        "description": "A uuid that uniquely identifies the evidence of the pair within Paramify",
+                                        "example": "9e1f3a5c-7b2d-4c6e-a8f0-2d4b6c8e0a1f"
+                                      },
+                                      "source": {
+                                        "type": "string",
+                                        "enum": [
+                                          "MANUAL",
+                                          "MENTION"
+                                        ],
+                                        "description": "MANUAL when associated directly, MENTION when mentioned in the function narrative",
+                                        "example": "MANUAL"
+                                      }
+                                    },
+                                    "required": [
+                                      "pipelineEvidencePairId",
+                                      "pipelineId",
+                                      "evidenceId",
+                                      "source"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "description": "The pipeline-evidence pairs associated with the function"
                                 }
                               },
                               "required": [
@@ -7289,7 +7519,8 @@
                                 "implementationStatus",
                                 "responsibleRole",
                                 "owners",
-                                "validatorEvidencePairs"
+                                "validatorEvidencePairs",
+                                "pipelineEvidencePairs"
                               ],
                               "additionalProperties": false
                             },
@@ -7771,6 +8002,52 @@
                               "additionalProperties": false
                             },
                             "description": "The validator-evidence pairs associated with the function"
+                          },
+                          "pipelineEvidencePairs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "pipelineEvidencePairId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the pipeline-evidence pair within Paramify",
+                                  "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+                                },
+                                "pipelineId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the pipeline of the pair within Paramify",
+                                  "example": "a2c4e6f8-0b1d-4e3f-9a5c-7d9e1f3a5b7c"
+                                },
+                                "evidenceId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the evidence of the pair within Paramify",
+                                  "example": "9e1f3a5c-7b2d-4c6e-a8f0-2d4b6c8e0a1f"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MANUAL",
+                                    "MENTION"
+                                  ],
+                                  "description": "MANUAL when associated directly, MENTION when mentioned in the function narrative",
+                                  "example": "MANUAL"
+                                }
+                              },
+                              "required": [
+                                "pipelineEvidencePairId",
+                                "pipelineId",
+                                "evidenceId",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "The pipeline-evidence pairs associated with the function"
                           }
                         },
                         "required": [
@@ -7780,7 +8057,8 @@
                           "implementationStatus",
                           "responsibleRole",
                           "owners",
-                          "validatorEvidencePairs"
+                          "validatorEvidencePairs",
+                          "pipelineEvidencePairs"
                         ],
                         "additionalProperties": false
                       },
@@ -7840,7 +8118,7 @@
         ],
         "operationId": "patchSolutionCapabilityById",
         "summary": "Update a solution capability by ID",
-        "description": "Replaces the MANUAL validator-evidence pairs of each supplied function. Omitted functions are untouched and MENTION pairs are never removed. Resets the completed reviews of the solution capability.",
+        "description": "Replaces the MANUAL validator-evidence pairs and pipeline-evidence pairs of each supplied function. Omitted functions are untouched and MENTION pairs are never removed. Resets the completed reviews of the solution capability.",
         "parameters": [
           {
             "in": "path",
@@ -8263,6 +8541,52 @@
                               "additionalProperties": false
                             },
                             "description": "The validator-evidence pairs associated with the function"
+                          },
+                          "pipelineEvidencePairs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "pipelineEvidencePairId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the pipeline-evidence pair within Paramify",
+                                  "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+                                },
+                                "pipelineId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the pipeline of the pair within Paramify",
+                                  "example": "a2c4e6f8-0b1d-4e3f-9a5c-7d9e1f3a5b7c"
+                                },
+                                "evidenceId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                                  "description": "A uuid that uniquely identifies the evidence of the pair within Paramify",
+                                  "example": "9e1f3a5c-7b2d-4c6e-a8f0-2d4b6c8e0a1f"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MANUAL",
+                                    "MENTION"
+                                  ],
+                                  "description": "MANUAL when associated directly, MENTION when mentioned in the function narrative",
+                                  "example": "MANUAL"
+                                }
+                              },
+                              "required": [
+                                "pipelineEvidencePairId",
+                                "pipelineId",
+                                "evidenceId",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "The pipeline-evidence pairs associated with the function"
                           }
                         },
                         "required": [
@@ -8272,7 +8596,8 @@
                           "implementationStatus",
                           "responsibleRole",
                           "owners",
-                          "validatorEvidencePairs"
+                          "validatorEvidencePairs",
+                          "pipelineEvidencePairs"
                         ],
                         "additionalProperties": false
                       },
@@ -9793,14 +10118,144 @@
         }
       }
     },
+    "/pipelines": {
+      "get": {
+        "tags": [
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
+        ],
+        "operationId": "getPipelines",
+        "summary": "List the pipelines in the workspace",
+        "description": "Lists the pipelines in the workspace. Pipelines can be filtered by type.\n\nPipelines of type `VULNERABILITY` and `CONFIGURATION` are assessments in the Paramify application. Their `id` value can be used as the `pipelineId` parameter in the `pipelines/{pipelineId}/intake`, `pipelines/{pipelineId}/process`, and `pipelines/{pipelineId}/close` routes.\n\nPipelines of type `INVENTORY` are inventory pipelines in the Paramify application. Their `id` value can be used as the `subjectId` in the request body of the `evidence/{evidenceId}/associate` route, with the `PIPELINE` subject type.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "description": "Filter pipelines by type. If multiple types are provided, pipelines of any of the types are returned.",
+              "example": [
+                "VULNERABILITY",
+                "CONFIGURATION"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "VULNERABILITY",
+                  "CONFIGURATION",
+                  "INVENTORY"
+                ]
+              }
+            },
+            "description": "Filter pipelines by type. If multiple types are provided, pipelines of any of the types are returned."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineArrayResponseObject"
+                }
+              }
+            },
+            "links": {
+              "getPipelines": {
+                "$ref": "#/components/links/getPipelines"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
+    "/pipelines/{pipelineId}": {
+      "get": {
+        "tags": [
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
+        ],
+        "operationId": "getPipeline",
+        "summary": "Get a pipeline by its id",
+        "description": "Retrieves the pipeline named by `pipelineId`.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipelineId",
+            "schema": {
+              "$ref": "#/components/schemas/anyPipelineId"
+            },
+            "required": true,
+            "description": "The ID of a pipeline of any type."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineResponseObject"
+                }
+              }
+            },
+            "links": {
+              "getPipeline": {
+                "$ref": "#/components/links/getPipeline"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplemented"
+          }
+        }
+      }
+    },
     "/pipelines/{pipelineId}/intake": {
       "post": {
         "tags": [
-          "Pipelines (\"Assessments\" in the Paramify application)"
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
         ],
         "operationId": "postPipelineIntake",
         "summary": "Upload an artifact to a pipeline's current cycle and optionally queue its work",
-        "description": "Uploads the file as an artifact and attaches it to the intake of the current cycle of the pipeline named by `pipelineId`, opening a cycle that starts on the workspace's current day if no other cycles are open.\n\nThe assessment's file intake preset must be configured. If it is not, requests will be refused with `400`.\n\nSupplying an `operation` also queues that work over every artifact on the cycle that no run has processed and no unfinished job is already processing, the artifact just uploaded included. An `operation` requires the `PIPELINE_PROCESS` permission on the API key on top of `PIPELINE_INTAKE`, and `PROCESS_CLOSE` requires `PIPELINE_CLOSE` as well.\n\nSupplying `cycle.startDate` sets the day a newly opened cycle starts on, read in the workspace's timezone. It applies only when the request opens a cycle: if the pipeline already carries one in progress, that cycle takes the upload and the value has no effect. Omit it to start the cycle on the workspace's current day.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Uploads the file as an artifact and attaches it to the intake of the current cycle of the pipeline named by `pipelineId`, opening a cycle that starts on the workspace's current day if no other cycles are open.\n\nOnly `VULNERABILITY` and `CONFIGURATION` pipelines are accepted.\n\nThe assessment's file intake preset must be configured. If it is not, requests will be refused with `400`.\n\nSupplying an `operation` also queues that work over every artifact on the cycle that no run has processed and no unfinished job is already processing, the artifact just uploaded included. An `operation` requires the `PIPELINE_PROCESS` permission on the API key on top of `PIPELINE_INTAKE`, and `PROCESS_CLOSE` requires `PIPELINE_CLOSE` as well.\n\nSupplying `cycle.startDate` sets the day a newly opened cycle starts on, read in the workspace's timezone. It applies only when the request opens a cycle: if the pipeline already carries one in progress, that cycle takes the upload and the value has no effect. Omit it to start the cycle on the workspace's current day.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -9809,7 +10264,7 @@
               "$ref": "#/components/schemas/pipelineId"
             },
             "required": true,
-            "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id."
+            "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment."
           }
         ],
         "requestBody": {
@@ -9897,11 +10352,11 @@
     "/pipelines/{pipelineId}/process": {
       "post": {
         "tags": [
-          "Pipelines (\"Assessments\" in the Paramify application)"
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
         ],
         "operationId": "postPipelineProcess",
         "summary": "Queue processing of artifacts on a pipeline's current cycle",
-        "description": "Queues processing of the named artifacts into the current cycle of the pipeline named by `pipelineId`.\n\nOmit `artifactIds` to queue every artifact on the cycle that no run has processed and no unfinished job is already processing. A cycle holding none of those is refused.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Queues processing of the named artifacts into the current cycle of the pipeline named by `pipelineId`.\n\nOnly `VULNERABILITY` and `CONFIGURATION` pipelines are accepted.\n\nOmit `artifactIds` to queue every artifact on the cycle that no run has processed and no unfinished job is already processing. A cycle holding none of those is refused.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -9910,7 +10365,7 @@
               "$ref": "#/components/schemas/pipelineId"
             },
             "required": true,
-            "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id."
+            "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment."
           }
         ],
         "requestBody": {
@@ -9967,11 +10422,11 @@
     "/pipelines/{pipelineId}/close": {
       "post": {
         "tags": [
-          "Pipelines (\"Assessments\" in the Paramify application)"
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
         ],
         "operationId": "postPipelineClose",
         "summary": "Queue the close of a pipeline's current cycle",
-        "description": "Queues the close of the current cycle of the pipeline named by `pipelineId`.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Queues the close of the current cycle of the pipeline named by `pipelineId`.\n\nOnly `VULNERABILITY` and `CONFIGURATION` pipelines are accepted.\n\nThe cycle is taken from the pipeline’s current state rather than from anything supplied by the caller. Name the cycle outright with the `/pipelines/{pipelineId}/cycles/{cycleId}` form when a specific cycle is required.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -9980,7 +10435,7 @@
               "$ref": "#/components/schemas/pipelineId"
             },
             "required": true,
-            "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id."
+            "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment."
           }
         ],
         "responses": {
@@ -10027,11 +10482,11 @@
     "/pipelines/{pipelineId}/cycles/{cycleId}/intake": {
       "post": {
         "tags": [
-          "Pipelines (\"Assessments\" in the Paramify application)"
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
         ],
         "operationId": "postPipelineCycleIntake",
         "summary": "Upload an artifact to a specific cycle of a pipeline and optionally queue its work",
-        "description": "Uploads the file as an artifact and attaches it to the intake of the cycle named by `cycleId` on the pipeline named by `pipelineId`. Any cycle that is neither closed nor closing accepts an upload.\n\nThe assessment's file intake preset must be configured. If it is not, requests will be refused with `400`.\n\nSupplying an `operation` also queues that work over every artifact on the cycle that no run has processed and no unfinished job is already processing, the artifact just uploaded included. An `operation` requires the `PIPELINE_PROCESS` permission on the API key on top of `PIPELINE_INTAKE`, and `PROCESS_CLOSE` requires `PIPELINE_CLOSE` as well. Queued work is confined to the pipeline's current cycle, so an `operation` against any other cycle is refused.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Uploads the file as an artifact and attaches it to the intake of the cycle named by `cycleId` on the pipeline named by `pipelineId`. Any cycle that is neither closed nor closing accepts an upload.\n\nOnly `VULNERABILITY` and `CONFIGURATION` pipelines are accepted.\n\nThe assessment's file intake preset must be configured. If it is not, requests will be refused with `400`.\n\nSupplying an `operation` also queues that work over every artifact on the cycle that no run has processed and no unfinished job is already processing, the artifact just uploaded included. An `operation` requires the `PIPELINE_PROCESS` permission on the API key on top of `PIPELINE_INTAKE`, and `PROCESS_CLOSE` requires `PIPELINE_CLOSE` as well. Queued work is confined to the pipeline's current cycle, so an `operation` against any other cycle is refused.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -10040,7 +10495,7 @@
               "$ref": "#/components/schemas/pipelineId"
             },
             "required": true,
-            "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id."
+            "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment."
           },
           {
             "in": "path",
@@ -10137,11 +10592,11 @@
     "/pipelines/{pipelineId}/cycles/{cycleId}/process": {
       "post": {
         "tags": [
-          "Pipelines (\"Assessments\" in the Paramify application)"
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
         ],
         "operationId": "postPipelineCycleProcess",
         "summary": "Queue processing of artifacts on a specific cycle of a pipeline",
-        "description": "Queues processing of the named artifacts into the cycle named by `cycleId` on the pipeline named by `pipelineId`.\n\nOmit `artifactIds` to queue every artifact on the cycle that no run has processed and no unfinished job is already processing. A cycle holding none of those is refused.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Queues processing of the named artifacts into the cycle named by `cycleId` on the pipeline named by `pipelineId`.\n\nOnly `VULNERABILITY` and `CONFIGURATION` pipelines are accepted.\n\nOmit `artifactIds` to queue every artifact on the cycle that no run has processed and no unfinished job is already processing. A cycle holding none of those is refused.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -10150,7 +10605,7 @@
               "$ref": "#/components/schemas/pipelineId"
             },
             "required": true,
-            "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id."
+            "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment."
           },
           {
             "in": "path",
@@ -10216,11 +10671,11 @@
     "/pipelines/{pipelineId}/cycles/{cycleId}/close": {
       "post": {
         "tags": [
-          "Pipelines (\"Assessments\" in the Paramify application)"
+          "Pipelines (\"Assessments\" and \"Inventory Pipelines\" in the Paramify application)"
         ],
         "operationId": "postPipelineCycleClose",
         "summary": "Queue the close of a specific cycle of a pipeline",
-        "description": "Queues the close of the cycle named by `cycleId` on the pipeline named by `pipelineId`.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
+        "description": "Queues the close of the cycle named by `cycleId` on the pipeline named by `pipelineId`.\n\nOnly `VULNERABILITY` and `CONFIGURATION` pipelines are accepted.\n\nThe request is validated when it is submitted, so a request that cannot run is rejected here rather than becoming a queued job that blocks the ones behind it.",
         "parameters": [
           {
             "in": "path",
@@ -10229,7 +10684,7 @@
               "$ref": "#/components/schemas/pipelineId"
             },
             "required": true,
-            "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id."
+            "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment."
           },
           {
             "in": "path",
@@ -11171,6 +11626,27 @@
         "description": "An id that represents an artifact request within the Paramify application.",
         "example": "123e4567-e89b-12d3-a456-426614174000"
       },
+      "PatchArtifactRequestRequestObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "SUBMITTED",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "description": "The current status of the artifact request. OPEN: work is in progress. SUBMITTED: waiting for approval or rejection. REJECTED: work can continue and the artifact request can be submitted again. APPROVED: done.",
+            "example": "OPEN"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing the status to set on the artifact request."
+      },
       "PostBatchRequestObject": {
         "oneOf": [
           {
@@ -11205,6 +11681,26 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
             "description": "The id of the artifact request to create the batch on. The batch is on the evidence of the artifact request.",
             "example": "e3977e3e-0b77-4e78-81de-f90e3e37e43c"
+          },
+          "whenToApprove": {
+            "description": "When this batch is approved. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission. Only when creating: when left out, it is copied from the evidence.",
+            "example": "SUBMISSION",
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "SUBMISSION_WITH_PASSING_VALIDATORS",
+              "SUBMISSION"
+            ]
+          },
+          "whenToCreateAndUpdateProcess": {
+            "description": "When Create & Update Processing runs on artifacts of this batch. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved. Only when creating: when left out, it is copied from the evidence.",
+            "example": "MANUAL",
+            "type": "string",
+            "enum": [
+              "UPON_UPLOAD",
+              "MANUAL",
+              "APPROVAL"
+            ]
           }
         },
         "required": [
@@ -11229,6 +11725,26 @@
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
             "description": "The id of the evidence to create the batch on",
             "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+          },
+          "whenToApprove": {
+            "description": "When this batch is approved. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission. Only when creating: when left out, it is copied from the evidence.",
+            "example": "SUBMISSION",
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "SUBMISSION_WITH_PASSING_VALIDATORS",
+              "SUBMISSION"
+            ]
+          },
+          "whenToCreateAndUpdateProcess": {
+            "description": "When Create & Update Processing runs on artifacts of this batch. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved. Only when creating: when left out, it is copied from the evidence.",
+            "example": "MANUAL",
+            "type": "string",
+            "enum": [
+              "UPON_UPLOAD",
+              "MANUAL",
+              "APPROVAL"
+            ]
           }
         },
         "required": [
@@ -11244,6 +11760,33 @@
         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
         "description": "An id that represents a batch within the Paramify application.",
         "example": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "PatchBatchRequestObject": {
+        "type": "object",
+        "properties": {
+          "whenToApprove": {
+            "description": "When this batch is approved. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission. Only when creating: when left out, it is copied from the evidence.",
+            "example": "SUBMISSION",
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "SUBMISSION_WITH_PASSING_VALIDATORS",
+              "SUBMISSION"
+            ]
+          },
+          "whenToCreateAndUpdateProcess": {
+            "description": "When Create & Update Processing runs on artifacts of this batch. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved. Only when creating: when left out, it is copied from the evidence.",
+            "example": "MANUAL",
+            "type": "string",
+            "enum": [
+              "UPON_UPLOAD",
+              "MANUAL",
+              "APPROVAL"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "description": "An object containing the settings of the batch to change. A setting left out is not changed."
       },
       "UploadBatchArtifactSchema": {
         "type": "object",
@@ -11300,7 +11843,7 @@
         "type": "object",
         "properties": {
           "providerValidatorEvidencePairs": {
-            "description": "Replaces the function's MANUAL pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "description": "Replaces the function's MANUAL validator-evidence pairs. Omit to leave the function untouched; MENTION pairs are never removed",
             "example": [
               {
                 "validatorEvidencePairId": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
@@ -11324,7 +11867,7 @@
             }
           },
           "integratorValidatorEvidencePairs": {
-            "description": "Replaces the function's MANUAL pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "description": "Replaces the function's MANUAL validator-evidence pairs. Omit to leave the function untouched; MENTION pairs are never removed",
             "example": [
               {
                 "validatorEvidencePairId": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
@@ -11348,7 +11891,7 @@
             }
           },
           "endUserValidatorEvidencePairs": {
-            "description": "Replaces the function's MANUAL pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "description": "Replaces the function's MANUAL validator-evidence pairs. Omit to leave the function untouched; MENTION pairs are never removed",
             "example": [
               {
                 "validatorEvidencePairId": "b7d2e4a1-3c5f-4e8a-9b6d-1f0c2a3e4d5b"
@@ -11368,6 +11911,78 @@
               },
               "required": [
                 "validatorEvidencePairId"
+              ]
+            }
+          },
+          "providerPipelineEvidencePairs": {
+            "description": "Replaces the function's MANUAL pipeline-evidence pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "example": [
+              {
+                "pipelineEvidencePairId": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pipelineEvidencePairId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "A uuid that uniquely identifies the pipeline-evidence pair within Paramify",
+                  "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+                }
+              },
+              "required": [
+                "pipelineEvidencePairId"
+              ]
+            }
+          },
+          "integratorPipelineEvidencePairs": {
+            "description": "Replaces the function's MANUAL pipeline-evidence pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "example": [
+              {
+                "pipelineEvidencePairId": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pipelineEvidencePairId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "A uuid that uniquely identifies the pipeline-evidence pair within Paramify",
+                  "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+                }
+              },
+              "required": [
+                "pipelineEvidencePairId"
+              ]
+            }
+          },
+          "endUserPipelineEvidencePairs": {
+            "description": "Replaces the function's MANUAL pipeline-evidence pairs. Omit to leave the function untouched; MENTION pairs are never removed",
+            "example": [
+              {
+                "pipelineEvidencePairId": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pipelineEvidencePairId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "A uuid that uniquely identifies the pipeline-evidence pair within Paramify",
+                  "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+                }
+              },
+              "required": [
+                "pipelineEvidencePairId"
               ]
             }
           }
@@ -12198,6 +12813,7 @@
           "program-requirements",
           "program-controls",
           "content-records",
+          "excuse-presets",
           "excuses"
         ],
         "description": "The Paramify entity type that custom tags are associated with.",
@@ -12239,11 +12855,18 @@
           ]
         }
       },
+      "anyPipelineId": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+        "description": "The ID of a pipeline of any type.",
+        "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+      },
       "pipelineId": {
         "type": "string",
         "format": "uuid",
         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-        "description": "The ID that represents a pipeline within the Paramify application. A pipeline is identified by its assessment id.",
+        "description": "The ID of a `VULNERABILITY` or `CONFIGURATION` pipeline. It is the ID of the pipeline's assessment.",
         "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
       },
       "PipelineIntakeArtifactSchema": {
@@ -13447,6 +14070,37 @@
         "additionalProperties": false,
         "description": "A validator paired with this evidence"
       },
+      "EvidencePipelineResponse": {
+        "type": "object",
+        "properties": {
+          "pipelineEvidencePairId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A UUID that uniquely identifies the pairing of this pipeline with this evidence.",
+            "example": "d5f1a3c7-9e2b-4d6f-8a0c-3b5d7e9f1a2c"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A UUID that uniquely identifies the pipeline within Paramify",
+            "example": "a2c4e6f8-0b1d-4e3f-9a5c-7d9e1f3a5b7c"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the pipeline",
+            "example": "Cloud Asset Inventory"
+          }
+        },
+        "required": [
+          "pipelineEvidencePairId",
+          "id",
+          "name"
+        ],
+        "additionalProperties": false,
+        "description": "A pipeline paired with this evidence"
+      },
       "EvidenceChannelResponse": {
         "type": "object",
         "properties": {
@@ -13820,6 +14474,17 @@
             "maximum": 9007199254740991,
             "description": "The number of batches on this artifact request",
             "example": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "SUBMITTED",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "description": "The current status of the artifact request. OPEN: work is in progress. SUBMITTED: waiting for approval or rejection. REJECTED: work can continue and the artifact request can be submitted again. APPROVED: done.",
+            "example": "OPEN"
           }
         },
         "required": [
@@ -13829,7 +14494,8 @@
           "dueDate",
           "channelId",
           "evidenceId",
-          "batchCount"
+          "batchCount",
+          "status"
         ],
         "additionalProperties": false,
         "description": "An object containing information about an artifact request."
@@ -13953,7 +14619,7 @@
               "SUBMISSION_WITH_PASSING_VALIDATORS",
               "SUBMISSION"
             ],
-            "description": "When this batch is approved, copied from its evidence when the batch is created. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
+            "description": "When this batch is approved. MANUAL: a reviewer manually approves it. SUBMISSION_WITH_PASSING_VALIDATORS: it is automatically approved upon submission if all validators pass. SUBMISSION: it is automatically approved upon submission.",
             "example": "SUBMISSION"
           },
           "whenToCreateAndUpdateProcess": {
@@ -13963,7 +14629,7 @@
               "MANUAL",
               "APPROVAL"
             ],
-            "description": "When Create & Update Processing runs on artifacts of this batch, copied from its evidence when the batch is created. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
+            "description": "When Create & Update Processing runs on artifacts of this batch. UPON_UPLOAD: automatically after upload. MANUAL: manually at any time after upload. APPROVAL: only after the batch is approved.",
             "example": "MANUAL"
           }
         },
@@ -14643,6 +15309,65 @@
             "Q4 Review"
           ]
         }
+      },
+      "PipelineArrayResponseObject": {
+        "type": "object",
+        "properties": {
+          "pipelines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PipelineResponseObject"
+            }
+          }
+        },
+        "required": [
+          "pipelines"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing a list of pipelines."
+      },
+      "PipelineResponseObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "A uuid that uniquely identifies an individual pipeline within Paramify.",
+            "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the pipeline.",
+            "example": "AWS Vulnerability Scans"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "VULNERABILITY",
+              "CONFIGURATION",
+              "INVENTORY"
+            ],
+            "description": "The type of the pipeline. `VULNERABILITY` and `CONFIGURATION` pipelines are assessments in the Paramify application. `INVENTORY` pipelines are inventory pipelines in the Paramify application.",
+            "example": "VULNERABILITY"
+          },
+          "referenceId": {
+            "description": "The human-readable reference identifier of the pipeline, or null if it has none.",
+            "example": "ASMT-1",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "referenceId"
+        ],
+        "additionalProperties": false,
+        "description": "An object containing information about a pipeline."
       },
       "PipelineIntakeResponse": {
         "type": "object",
@@ -15502,6 +16227,34 @@
                 "properties": {
                   "kind": {
                     "type": "string",
+                    "const": "OAUTH_CLIENT",
+                    "description": "An OAuth client."
+                  },
+                  "oauthClientId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                    "description": "The UUID of the OAuth client that performed the activity.",
+                    "example": "a033d3c7-4b0a-4404-9131-99745694c1da"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The display name of the OAuth client.",
+                    "example": "CI Pipeline"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "oauthClientId",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
                     "const": "DELETED_USER",
                     "description": "A removed user."
                   },
@@ -15722,7 +16475,8 @@
                       "IMPORT",
                       "REPLY",
                       "AUTOMATED",
-                      "PUBLISH"
+                      "PUBLISH",
+                      "UNPUBLISH"
                     ],
                     "description": "A create, update, or other history activity.",
                     "example": "UPDATE"
@@ -16106,6 +16860,13 @@
           "artifactRequestId": "$response.body#/id"
         }
       },
+      "updateArtifactRequest": {
+        "operationId": "updateArtifactRequest",
+        "description": "The `id` value of the artifact request returned can be used as the `artifactRequestId` parameter in the `artifact-requests` route.",
+        "parameters": {
+          "artifactRequestId": "$response.body#/id"
+        }
+      },
       "getBatches": {
         "operationId": "getBatches",
         "description": "The `id` value of the batch(es) returned can be used as the `batchId` parameter in the `batches` route.",
@@ -16122,6 +16883,13 @@
       },
       "createBatch": {
         "operationId": "createBatch",
+        "description": "The `id` value of the batch returned can be used as the `batchId` parameter in the `batches` route.",
+        "parameters": {
+          "batchId": "$response.body#/id"
+        }
+      },
+      "updateBatch": {
+        "operationId": "updateBatch",
         "description": "The `id` value of the batch returned can be used as the `batchId` parameter in the `batches` route.",
         "parameters": {
           "batchId": "$response.body#/id"
@@ -16335,6 +17103,20 @@
         "description": "The `id` value of the queued job can be used as the `pipelineJobId` parameter in the `pipeline-jobs` routes.",
         "parameters": {
           "pipelineJobId": "$response.body#/id"
+        }
+      },
+      "getPipelines": {
+        "operationId": "getPipeline",
+        "description": "The `id` value of the pipeline(s) returned can be used as the `pipelineId` parameter in the `pipelines` route.",
+        "parameters": {
+          "pipelineId": "$response.body#/pipelines/0/id"
+        }
+      },
+      "getPipeline": {
+        "operationId": "getPipeline",
+        "description": "The `id` value of the pipeline returned can be used as the `pipelineId` parameter in the `pipelines` route.",
+        "parameters": {
+          "pipelineId": "$response.body#/id"
         }
       },
       "getPipelineJobs": {
